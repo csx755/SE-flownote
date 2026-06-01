@@ -26,6 +26,9 @@ Thumbs.db
 *.swo
 *~
 
+# === Claude Code ===
+.claude/
+
 # === Docker ===
 docker-data/
 
