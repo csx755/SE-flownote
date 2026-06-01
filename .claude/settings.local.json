@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\Git\\\\bin\\\\git.exe\", \"C:\\\\Program Files \\(x86\\)\\\\Git\\\\bin\\\\git.exe\", \"$env:LOCALAPPDATA\\\\Programs\\\\Git\\\\bin\\\\git.exe\", \"$env:LOCALAPPDATA\\\\GitHubDesktop\\\\app-3.4.0\\\\resources\\\\app\\\\git\\\\cmd\\\\git.exe\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Host $p } })",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -s https://api.github.com/repos/csx755/SE-flownote/commits)",
+      "Bash(python3 -c \"import sys,json; [print\\(c['commit']['message'].split\\('\\\\n'\\)[0]\\) for c in json.load\\(sys.stdin\\)]\")"
+    ]
+  }
+}
