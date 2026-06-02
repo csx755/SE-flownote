@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import {
   createNoteSchema,
   updateNoteSchema,
@@ -26,6 +26,14 @@ notesRoute.get('/', async (c) => {
 
   if (query.archived !== undefined) {
     conditions.push(eq(notes.isArchived, query.archived));
+  }
+
+  // FIX 5: 实现日期范围过滤（startDate/endDate 之前被解析但丢弃）
+  if (query.startDate) {
+    conditions.push(gte(notes.createdAt, new Date(query.startDate)));
+  }
+  if (query.endDate) {
+    conditions.push(lte(notes.createdAt, new Date(query.endDate)));
   }
 
   const list = await db
@@ -59,6 +67,7 @@ notesRoute.post('/', async (c) => {
 // GET /api/v1/notes/:id
 notesRoute.get('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
   const [note] = await db
@@ -76,23 +85,26 @@ notesRoute.get('/:id', async (c) => {
 // PATCH /api/v1/notes/:id
 notesRoute.patch('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const body = updateNoteSchema.parse(await c.req.json());
-  const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(notes)
-    .where(and(eq(notes.id, id), eq(notes.userId, userId)));
-
-  if (!existing) {
-    return c.json({ error: '便签不存在' }, 404);
+  // FIX 9: 拒绝空 body，避免生成无效 SQL
+  if (Object.keys(body).length === 0) {
+    return c.json({ error: '请求体不能为空' }, 400);
   }
 
+  const userId = c.get('userId');
+
+  // FIX 7: mutation WHERE 包含 userId 纵深防御
   const [updated] = await db
     .update(notes)
     .set(body)
-    .where(eq(notes.id, id))
+    .where(and(eq(notes.id, id), eq(notes.userId, userId)))
     .returning();
+
+  if (!updated) {
+    return c.json({ error: '便签不存在' }, 404);
+  }
 
   return c.json(updated);
 });
@@ -100,18 +112,18 @@ notesRoute.patch('/:id', async (c) => {
 // DELETE /api/v1/notes/:id
 notesRoute.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(notes)
-    .where(and(eq(notes.id, id), eq(notes.userId, userId)));
+  // FIX 7: DELETE 的 WHERE 包含 userId，一次查询完成鉴权+删除
+  const [deleted] = await db
+    .delete(notes)
+    .where(and(eq(notes.id, id), eq(notes.userId, userId)))
+    .returning();
 
-  if (!existing) {
+  if (!deleted) {
     return c.json({ error: '便签不存在' }, 404);
   }
-
-  await db.delete(notes).where(eq(notes.id, id));
 
   return c.json({ success: true });
 });
@@ -119,6 +131,7 @@ notesRoute.delete('/:id', async (c) => {
 // POST /api/v1/notes/:id/convert
 notesRoute.post('/:id/convert', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const body = convertNoteSchema.parse(await c.req.json());
   const userId = c.get('userId');
 
@@ -129,6 +142,11 @@ notesRoute.post('/:id/convert', async (c) => {
 
   if (!note) {
     return c.json({ error: '便签不存在' }, 404);
+  }
+
+  // FIX 4: 防止重复转换
+  if (note.isMerged) {
+    return c.json({ error: '该便签已转换', status: 'merged' }, 409);
   }
 
   if (body.targetType === 'KNOWLEDGE_PAGE') {

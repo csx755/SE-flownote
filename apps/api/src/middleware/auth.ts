@@ -15,7 +15,8 @@ export async function authGuard(c: Context, next: Next) {
     return c.json({ error: '未提供认证令牌' }, 401);
   }
 
-  const token = authHeader.slice(7);
+  // FIX 11: trim 处理可能存在的双空格或首尾空白
+  const token = authHeader.slice(7).trim();
 
   try {
     const payload = await verifyToken(token);

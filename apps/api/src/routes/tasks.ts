@@ -59,6 +59,7 @@ tasksRoute.post('/', async (c) => {
 // GET /api/v1/tasks/:id
 tasksRoute.get('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
   const [task] = await db
@@ -76,23 +77,30 @@ tasksRoute.get('/:id', async (c) => {
 // PATCH /api/v1/tasks/:id
 tasksRoute.patch('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const body = updateTaskSchema.parse(await c.req.json());
+
+  if (Object.keys(body).length === 0) {
+    return c.json({ error: '请求体不能为空' }, 400);
+  }
+
   const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-
-  if (!existing) {
-    return c.json({ error: '任务不存在' }, 404);
-  }
+  // FIX 6: PATCH 也需将 dueDate 字符串转为 Date，与 POST 保持一致
+  const updateData = {
+    ...body,
+    dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
+  };
 
   const [updated] = await db
     .update(tasks)
-    .set(body)
-    .where(eq(tasks.id, id))
+    .set(updateData)
+    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
     .returning();
+
+  if (!updated) {
+    return c.json({ error: '任务不存在' }, 404);
+  }
 
   return c.json(updated);
 });
@@ -100,18 +108,17 @@ tasksRoute.patch('/:id', async (c) => {
 // DELETE /api/v1/tasks/:id
 tasksRoute.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  const [deleted] = await db
+    .delete(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+    .returning();
 
-  if (!existing) {
+  if (!deleted) {
     return c.json({ error: '任务不存在' }, 404);
   }
-
-  await db.delete(tasks).where(eq(tasks.id, id));
 
   return c.json({ success: true });
 });

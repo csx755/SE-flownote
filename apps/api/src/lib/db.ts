@@ -14,6 +14,11 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// 防止 DB 断连时 Node 进程崩溃（node-postgres 文档要求）
+pool.on('error', (err) => {
+  console.error('[DB] Unexpected pool error:', err);
+});
+
 const schema = {
   users,
   notes,

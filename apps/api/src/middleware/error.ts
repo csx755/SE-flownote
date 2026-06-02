@@ -5,6 +5,11 @@ export async function errorHandler(c: Context, next: Next) {
   try {
     await next();
   } catch (err) {
+    // FIX 10: 畸形 JSON 应返回 400 而非 500
+    if (err instanceof SyntaxError) {
+      return c.json({ error: 'Invalid JSON in request body' }, 400);
+    }
+
     if (err instanceof ZodError) {
       return c.json(
         {

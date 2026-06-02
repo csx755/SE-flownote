@@ -45,6 +45,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
 });
 
@@ -63,6 +64,7 @@ export const notes = pgTable('notes', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
 });
 
@@ -79,6 +81,7 @@ export const knowledgePages = pgTable('knowledge_pages', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
 });
 
@@ -99,5 +102,6 @@ export const tasks = pgTable('tasks', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
 });

@@ -49,6 +49,7 @@ pagesRoute.post('/', async (c) => {
 // GET /api/v1/pages/:id
 pagesRoute.get('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
   const [page] = await db
@@ -66,23 +67,24 @@ pagesRoute.get('/:id', async (c) => {
 // PATCH /api/v1/pages/:id
 pagesRoute.patch('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const body = updatePageSchema.parse(await c.req.json());
-  const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(knowledgePages)
-    .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)));
-
-  if (!existing) {
-    return c.json({ error: '知识页面不存在' }, 404);
+  if (Object.keys(body).length === 0) {
+    return c.json({ error: '请求体不能为空' }, 400);
   }
+
+  const userId = c.get('userId');
 
   const [updated] = await db
     .update(knowledgePages)
     .set(body)
-    .where(eq(knowledgePages.id, id))
+    .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)))
     .returning();
+
+  if (!updated) {
+    return c.json({ error: '知识页面不存在' }, 404);
+  }
 
   return c.json(updated);
 });
@@ -90,18 +92,17 @@ pagesRoute.patch('/:id', async (c) => {
 // DELETE /api/v1/pages/:id
 pagesRoute.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
   const userId = c.get('userId');
 
-  const [existing] = await db
-    .select()
-    .from(knowledgePages)
-    .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)));
+  const [deleted] = await db
+    .delete(knowledgePages)
+    .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)))
+    .returning();
 
-  if (!existing) {
+  if (!deleted) {
     return c.json({ error: '知识页面不存在' }, 404);
   }
-
-  await db.delete(knowledgePages).where(eq(knowledgePages.id, id));
 
   return c.json({ success: true });
 });

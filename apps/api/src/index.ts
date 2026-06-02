@@ -13,7 +13,23 @@ server.use('*', cors({
 
 server.route('/', app);
 
-const port = Number(process.env.PORT) || 3000;
+// 启动时校验必需的环境变量
+function validateEnv() {
+  const required = ['DATABASE_URL', 'JWT_SECRET'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+  if (process.env.JWT_SECRET === 'change-me-in-production') {
+    console.error('❌ JWT_SECRET must be changed from the default value "change-me-in-production"');
+    process.exit(1);
+  }
+}
+validateEnv();
+
+// FIX 13: 使用 nullish coalescing 而非 logical OR，保留 PORT=0 的语义
+const port = Number(process.env.PORT) ?? 3000;
 
 serve({ fetch: server.fetch, port });
 

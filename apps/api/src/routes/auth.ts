@@ -12,49 +12,66 @@ const auth = new Hono();
 auth.post('/register', async (c) => {
   const body = registerSchema.parse(await c.req.json());
 
-  // 检查用户名/邮箱唯一性
-  const existing = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, body.email));
-
-  if (existing.length > 0) {
-    return c.json({ error: '邮箱已被注册' }, 409);
-  }
-
-  const nameCheck = await db
-    .select()
-    .from(users)
-    .where(eq(users.username, body.username));
-
-  if (nameCheck.length > 0) {
-    return c.json({ error: '用户名已被占用' }, 409);
-  }
-
+  // FIX 8: 事务包裹检查+插入，消除 TOCTOU 竞态
   const hashedPassword = await bcrypt.hash(body.password, 10);
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      username: body.username,
-      email: body.email,
-      password: hashedPassword,
-    })
-    .returning();
+  try {
+    const [user] = await db.transaction(async (tx) => {
+      // 在事务内检查唯一性（利用 PG 行锁）
+      const existingEmail = await tx
+        .select()
+        .from(users)
+        .where(eq(users.email, body.email))
+        .for('update');
 
-  const token = await signToken(user);
+      if (existingEmail.length > 0) {
+        throw new Error('EMAIL_EXISTS');
+      }
 
-  return c.json(
-    {
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
+      const existingName = await tx
+        .select()
+        .from(users)
+        .where(eq(users.username, body.username))
+        .for('update');
+
+      if (existingName.length > 0) {
+        throw new Error('USERNAME_EXISTS');
+      }
+
+      return tx
+        .insert(users)
+        .values({
+          username: body.username,
+          email: body.email,
+          password: hashedPassword,
+        })
+        .returning();
+    });
+
+    const token = await signToken(user);
+
+    return c.json(
+      {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        },
       },
-    },
-    201
-  );
+      201
+    );
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === 'EMAIL_EXISTS') {
+        return c.json({ error: '邮箱已被注册' }, 409);
+      }
+      if (err.message === 'USERNAME_EXISTS') {
+        return c.json({ error: '用户名已被占用' }, 409);
+      }
+    }
+    throw err; // 重新抛出让 errorHandler 处理
+  }
 });
 
 // POST /api/v1/auth/login
