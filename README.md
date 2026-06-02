@@ -11,18 +11,22 @@ FlowNote 是一个将碎片信息捕获、知识结构化、任务执行串联�
 
 | 层级 | 技术 |
 |------|------|
-| 前端 | Vue 3 + TypeScript + Ant Design Vue |
-| 后端 | Node.js + Express.js + Prisma |
+| 前端 | Nuxt 3 + TypeScript + shadcn-vue + Tailwind CSS |
+| 后端 | Hono + TypeScript + Drizzle ORM |
 | 数据库 | PostgreSQL |
+| 校验 | Zod |
+| Auth | jose + bcryptjs |
+| 测试 | Vitest |
+| 包管理 | pnpm (monorepo) |
 | 容器化 | Docker + Docker Compose |
 
 ## 快速开始
 
 ### 环境要求
 
-- Node.js 20+
-- PostgreSQL 16+
-- Docker & Docker Compose（可选）
+- Node.js 22+
+- pnpm 9+
+- Docker & Docker Compose
 
 ### 本地运行
 
@@ -31,32 +35,37 @@ FlowNote 是一个将碎片信息捕获、知识结构化、任务执行串联�
 git clone <repo-url>
 cd flownote
 
-# 2. 启动后端
-cd backend
-cp .env.example .env   # 编辑 .env 填入数据库连接信息
-npm install
-npx prisma migrate dev
-npm run dev
+# 2. 安装依赖
+pnpm install
 
-# 3. 启动前端
-cd frontend
-npm install
-npm run dev
+# 3. 启动 PostgreSQL
+docker compose up -d
+
+# 4. 初始化数据库
+pnpm --filter @flownote/api db:push
+
+# 5. 启动开发服务
+pnpm dev
+# API → http://localhost:3000
+# Web → http://localhost:3001
 ```
 
 ### Docker 一键启动
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 项目结构
 
 ```
 flownote/
-├── backend/          # Express + Prisma 后端
-├── frontend/         # Vue 3 前端
-├── docs/             # 课程文档
+├── apps/
+│   ├── api/             # Hono + Drizzle API 服务
+│   └── web/             # Nuxt 3 前端
+├── packages/
+│   └── shared/          # Drizzle schema + Zod + 共享类型
+├── docs/                # 课程文档
 │   ├── 0.1-小组章程/
 │   ├── 0.2-选题汇报/
 │   ├── 1.1-需求捕获/
@@ -64,6 +73,8 @@ flownote/
 │   ├── 2.1-项目计划/
 │   └── 2.2-MVP阶段/
 ├── docker-compose.yml
+├── pnpm-workspace.yaml
+├── AGENTS.md
 ├── .gitignore
 ├── LICENSE
 └── README.md

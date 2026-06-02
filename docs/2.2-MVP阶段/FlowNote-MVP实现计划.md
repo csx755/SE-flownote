@@ -76,8 +76,8 @@ MVP 的核心假设是：目标用户在学习、项目协作或个人事务处�
 | Milestone | 时间 | 目标 | 交付物 | 负责人 |
 |---|---|---|---|---|
 | M0：MVP 范围冻结 | 6月1日 | 确认只做核心闭环，避免功能膨胀 | MVP 优先级清单、砍掉功能说明 | 全坤 |
-| M1：基础环境就绪 | 6月2日 22:00 前 | 前后端、数据库、Docker、Git 分支可用 | 前端脚手架、后端脚手架、Prisma、docker-compose | 肖昌珅、金奕辰 |
-| M2：核心数据模型完成 | 6月4日 22:00 前 | User、Note、KnowledgePage、Task 模型和基础 API 可用 | Prisma schema、migration、Swagger 草稿 | 肖昌珅、杜承敖 |
+| M1：基础环境就绪 | 6月2日 22:00 前 | 前后端、数据库、Docker、Git 分支可用 | 前端脚手架、后端脚手架、Drizzle、docker-compose | 肖昌珅、金奕辰 |
+| M2：核心数据模型完成 | 6月4日 22:00 前 | User、Note、KnowledgePage、Task 模型和基础 API 可用 | Drizzle schema、migration、Scalar API doc | 肖昌珅、杜承敖 |
 | M3：便签与知识页面闭环 | 6月7日 22:00 前 | 用户能记录便签并转成知识页面 | 认证、便签 CRUD、知识页面 CRUD、Markdown 编辑 | 金奕辰、杜承敖 |
 | M4：任务执行闭环 | 6月9日 22:00 前 | 用户能从便签生成任务并推进状态 | 任务 CRUD、任务看板、便签转任务 | 金奕辰、肖昌珅 |
 | M5：试用版本冻结 | 6月10日 22:00 前 | 形成可给早期用户试用的稳定版本 | 可运行系统、测试账号、试用脚本 | 全员 |
@@ -98,15 +98,15 @@ MVP 的核心假设是：目标用户在学习、项目协作或个人事务处�
 | MVP-PLAN-001 | MVP 范围冻结 | P0 | 全坤 | 本文档、优先级清单 |
 | MVP-DEV-001 | Git 仓库初始化 | P0 | 肖昌珅 | GitHub 仓库、分支策略、提交规范 |
 | MVP-DEV-002 | Docker 开发环境 | P0 | 肖昌珅 | docker-compose.yml，包含后端和 PostgreSQL |
-| MVP-DEV-003 | 前端脚手架 | P0 | 金奕辰 | Vue 3 + TypeScript + Ant Design Vue |
-| MVP-DEV-004 | 后端脚手架 | P0 | 肖昌珅 | Express + Prisma + JWT 基础结构 |
+| MVP-DEV-003 | 前端脚手架 | P0 | 金奕辰 | Nuxt 3 + TypeScript + shadcn-vue + Tailwind CSS |
+| MVP-DEV-004 | 后端脚手架 | P0 | 肖昌珅 | Hono + TypeScript + Drizzle ORM + JWT |
 | MVP-DEV-005 | 数据库最小 Schema | P0 | 肖昌珅 | User、Note、KnowledgePage、Task |
 
 **验收标准**：
 
 - `docker-compose up` 或本地命令能启动基础服务。
 - 前端首页可打开，后端健康检查接口可访问。
-- Prisma migration 可成功执行。
+- Drizzle migration 可成功执行。
 - README 中已有本地启动草稿。
 
 ### 4.2 Sprint 1：核心记录与知识整理（6月3日-6月7日）
@@ -229,11 +229,11 @@ MVP 的核心假设是：目标用户在学习、项目协作或个人事务处�
 ```text
 main
 └── develop
-    ├── feature/auth
-    ├── feature/note
-    ├── feature/page
-    ├── feature/task
-    └── feature/docs-feedback
+    ├── feat/csxiao/auth
+    ├── feat/jinyichen/note
+    ├── feat/jinyichen/page
+    ├── feat/jinyichen/task
+    └── feat/quank/docs-feedback
 ```
 
 要求：
