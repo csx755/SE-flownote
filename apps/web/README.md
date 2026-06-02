@@ -1,75 +1,15 @@
-# Nuxt Minimal Starter
+# FlowNote Web
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt 3 前端，端口 3001。属于 pnpm monorepo，请从项目根目录操作。
 
-## Setup
-
-Make sure to install dependencies:
+## 开发
 
 ```bash
-# npm
-npm install
-
-# pnpm
+# 根目录安装依赖
 pnpm install
 
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
+# 启动开发服务（API → 3000, Web → 3001）
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+# 或单独启动前端
+pnpm --filter @flownote/web dev
 ```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
