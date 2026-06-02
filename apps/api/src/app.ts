@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { apiReference } from '@scalar/hono-api-reference';
-import { errorHandler } from './middleware/error';
+import { errorHandler, nonErrorCatcher } from './middleware/error';
 import auth from './routes/auth';
 import notesRoute from './routes/notes';
 import pagesRoute from './routes/pages';
@@ -8,8 +8,11 @@ import tasksRoute from './routes/tasks';
 
 const app = new Hono();
 
-// 全局错误处理
-app.use('*', errorHandler);
+// 捕获非 Error 的 throw（Hono 会重新抛出它们）
+app.use('*', nonErrorCatcher);
+// 全局错误处理 — 必须用 onError 而非中间件
+// Hono 内部 compose 会拦截 Error 实例，中间件的 try/catch 看不到它们
+app.onError(errorHandler);
 
 // 健康检查
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));

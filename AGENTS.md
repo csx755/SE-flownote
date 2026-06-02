@@ -161,11 +161,12 @@ export default defineConfig({
 ### 4.2 启动步骤
 
 ```bash
-# 1. 安装依赖
+# 1. 安装依赖（首次需批准构建：pnpm approve-builds 选 esbuild）
 pnpm install
 
 # 2. 配置环境变量
 cp .env.example apps/api/.env
+# 编辑 apps/api/.env，替换 JWT_SECRET
 
 # 3. 启动 PostgreSQL
 docker compose up -d
@@ -174,10 +175,9 @@ docker compose up -d
 pnpm db:push
 
 # 5. 启动开发服务
-pnpm dev
-# API → http://localhost:3000
-# Web → http://localhost:3001
-# API Docs → http://localhost:3000/docs
+pnpm --filter @flownote/api dev
+# API → http://localhost:3000 | Docs → http://localhost:3000/docs
+# Web → http://localhost:3001（M3 待开发）
 ```
 
 单个项目启动：
@@ -332,9 +332,11 @@ console.log('API running on http://localhost:3000');
 ## 8. 测试策略
 
 ```
-apps/api/src/**/__tests__/*.test.ts    # API 单元/集成测试（Vitest）
-apps/web/**/*.test.ts                  # 前端组件测试（Vitest + @vue/test-utils）
+apps/api/src/**/__tests__/**/*.test.ts   # API 单元/集成测试（Vitest）
+apps/web/**/*.test.ts                    # 前端组件测试（Vitest + @vue/test-utils）
 ```
+
+**运行测试：** `pnpm --filter @flownote/api test`（当前 122 个单元测试）
 
 **每个路由最少 2 个测试：** 正常路径 + 鉴权失败 401。
 

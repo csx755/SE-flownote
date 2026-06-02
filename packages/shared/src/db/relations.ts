@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { users, notes, knowledgePages, tasks } from './schema';
+import { users, notes, knowledgePages, tasks } from './schema.ts';
 
 // ── User Relations ─────────────────────────────────────
 

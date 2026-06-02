@@ -35,25 +35,30 @@ FlowNote 是一个将碎片信息捕获、知识结构化、任务执行串联�
 git clone <repo-url>
 cd flownote
 
-# 2. 安装依赖
+# 2. 安装依赖（首次需批准 esbuild 构建脚本）
 pnpm install
+pnpm approve-builds    # 选择 esbuild 并按回车
 
-# 3. 启动 PostgreSQL
+# 3. 配置环境变量
+cp .env.example apps/api/.env
+# 编辑 apps/api/.env，替换 JWT_SECRET 为随机值
+
+# 4. 启动 PostgreSQL
 docker compose up -d
 
-# 4. 初始化数据库
+# 5. 初始化数据库
 pnpm --filter @flownote/api db:push
 
-# 5. 启动开发服务
-pnpm dev
+# 6. 启动开发服务
+pnpm --filter @flownote/api dev
 # API → http://localhost:3000
-# Web → http://localhost:3001
+# Web → http://localhost:3001（M3 待开发，届时 pnpm dev 一键启动双端）
 ```
 
-### Docker 一键启动
+### 运行测试
 
 ```bash
-docker compose up -d
+pnpm --filter @flownote/api test
 ```
 
 ## 项目结构

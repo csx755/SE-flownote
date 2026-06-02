@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
 import { app } from './app';
+import { resolvePort } from './lib/env';
 
 const server = new Hono();
 
@@ -21,15 +22,16 @@ function validateEnv() {
     console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
     process.exit(1);
   }
-  if (process.env.JWT_SECRET === 'change-me-in-production') {
-    console.error('❌ JWT_SECRET must be changed from the default value "change-me-in-production"');
+  // 拒绝 .env.example 中的示例值，防止遗忘配置
+  const bannedSecrets = ['change-me-in-production', 'your-secret-key-here'];
+  if (bannedSecrets.includes(process.env.JWT_SECRET!)) {
+    console.error(`❌ JWT_SECRET must be changed from the placeholder value "${process.env.JWT_SECRET}"`);
     process.exit(1);
   }
 }
 validateEnv();
 
-// FIX 13: 使用 nullish coalescing 而非 logical OR，保留 PORT=0 的语义
-const port = Number(process.env.PORT) ?? 3000;
+const port = resolvePort(process.env.PORT);
 
 serve({ fetch: server.fetch, port });
 

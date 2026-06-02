@@ -8,6 +8,9 @@
     "db:push": "pnpm --filter @flownote/api db:push",
     "db:studio": "pnpm --filter @flownote/api db:studio"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
   "devDependencies": {
     "concurrently": "^9.0.0"
   }

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.git/
+.gitignore
+*.md
+.vscode/
+.idea/
+.claude/
+旧文件/
+docker-data/
+coverage/
+.env
+.env.*.local
+*.log

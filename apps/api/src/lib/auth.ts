@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import type { JWTPayload } from 'jose';
 import type { User } from '@flownote/shared';
 
 // 拒绝硬编码默认值：生产环境必须显式配置
@@ -17,7 +18,7 @@ export interface TokenPayload {
 }
 
 export function signToken(user: Pick<User, 'id' | 'email'>): Promise<string> {
-  return new SignJWT({ userId: user.id, email: user.email } as TokenPayload)
+  return new SignJWT({ userId: user.id, email: user.email } as unknown as JWTPayload)
     .setProtectedHeader({ alg: JWT_ALG })
     .setIssuedAt()
     .setExpirationTime(EXPIRES_IN)
