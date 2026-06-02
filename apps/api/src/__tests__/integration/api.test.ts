@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { app } from '../../app';
 
 // 集成测试 — 覆盖所有端点 + 边界/极端情况
@@ -637,5 +638,46 @@ describe('Guards & Edges', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status).toBe(404);
+  });
+});
+
+function createCorsServer() {
+  const server = new Hono();
+  server.use('*', cors({ origin: ['http://localhost:3001'], credentials: true }));
+  server.route('/', app);
+  return server;
+}
+
+describe('CORS & Workspace', () => {
+  it('API 返回 CORS 头允许前端 localhost:3001', async () => {
+    const server = createCorsServer();
+    const res = await server.request('/health', {
+      headers: { Origin: 'http://localhost:3001' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3001');
+  });
+
+  it('CORS 预检请求 (OPTIONS) 返回正确头部', async () => {
+    const server = createCorsServer();
+    const res = await server.request('/api/v1/auth/login', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:3001',
+        'Access-Control-Request-Method': 'POST',
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3001');
+  });
+
+  it('健康检查公网可达（无需认证）', async () => {
+    const server = createServer();
+    const res = await server.request('/health');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe('ok');
   });
 });
