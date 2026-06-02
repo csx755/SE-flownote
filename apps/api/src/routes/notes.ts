@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import {
   createNoteSchema,
   updateNoteSchema,
