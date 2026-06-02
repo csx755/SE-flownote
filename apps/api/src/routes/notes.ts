@@ -135,56 +135,71 @@ notesRoute.post('/:id/convert', async (c) => {
   const body = convertNoteSchema.parse(await c.req.json());
   const userId = c.get('userId');
 
-  const [note] = await db
-    .select()
-    .from(notes)
-    .where(and(eq(notes.id, id), eq(notes.userId, userId)));
+  // FIX 8: 事务包裹检查+insert+update，防止 TOCTOU 竞态和孤儿数据
+  try {
+    const result = await db.transaction(async (tx) => {
+      // SELECT ... FOR UPDATE 行级锁，阻止并发转换
+      const [note] = await tx
+        .select()
+        .from(notes)
+        .where(and(eq(notes.id, id), eq(notes.userId, userId)))
+        .for('update');
 
-  if (!note) {
-    return c.json({ error: '便签不存在' }, 404);
+      if (!note) {
+        throw new Error('NOT_FOUND');
+      }
+      if (note.isMerged) {
+        throw new Error('ALREADY_MERGED');
+      }
+
+      if (body.targetType === 'KNOWLEDGE_PAGE') {
+        const [page] = await tx
+          .insert(knowledgePages)
+          .values({
+            title: body.title || note.content.slice(0, 20),
+            content: note.content,
+            userId,
+          })
+          .returning();
+
+        await tx
+          .update(notes)
+          .set({ isMerged: true, mergedToId: page.id })
+          .where(eq(notes.id, id));
+
+        return c.json({ targetType: 'KNOWLEDGE_PAGE', target: page }, 201);
+      }
+
+      // TASK
+      const [task] = await tx
+        .insert(tasks)
+        .values({
+          title: body.title || note.content.slice(0, 30),
+          description: note.content,
+          sourceType: 'NOTE',
+          sourceId: note.id,
+          userId,
+        })
+        .returning();
+
+      await tx
+        .update(notes)
+        .set({ isMerged: true, mergedToId: task.id })
+        .where(eq(notes.id, id));
+
+      return c.json({ targetType: 'TASK', target: task }, 201);
+    });
+
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.message === 'NOT_FOUND') {
+      return c.json({ error: '便签不存在' }, 404);
+    }
+    if (err instanceof Error && err.message === 'ALREADY_MERGED') {
+      return c.json({ error: '该便签已转换', status: 'merged' }, 409);
+    }
+    throw err;
   }
-
-  // FIX 4: 防止重复转换
-  if (note.isMerged) {
-    return c.json({ error: '该便签已转换', status: 'merged' }, 409);
-  }
-
-  if (body.targetType === 'KNOWLEDGE_PAGE') {
-    const [page] = await db
-      .insert(knowledgePages)
-      .values({
-        title: body.title || note.content.slice(0, 20),
-        content: note.content,
-        userId,
-      })
-      .returning();
-
-    await db
-      .update(notes)
-      .set({ isMerged: true, mergedToId: page.id })
-      .where(eq(notes.id, id));
-
-    return c.json({ targetType: 'KNOWLEDGE_PAGE', target: page }, 201);
-  }
-
-  // TASK
-  const [task] = await db
-    .insert(tasks)
-    .values({
-      title: body.title || note.content.slice(0, 30),
-      description: note.content,
-      sourceType: 'NOTE',
-      sourceId: note.id,
-      userId,
-    })
-    .returning();
-
-  await db
-    .update(notes)
-    .set({ isMerged: true })
-    .where(eq(notes.id, id));
-
-  return c.json({ targetType: 'TASK', target: task }, 201);
 });
 
 export default notesRoute;
