@@ -35,30 +35,41 @@ FlowNote 是一个将碎片信息捕获、知识结构化、任务执行串联�
 git clone <repo-url>
 cd flownote
 
-# 2. 安装依赖（首次需批准 esbuild 构建脚本）
+# 2. 安装依赖（首次需批准 esbuild 等包的构建脚本）
 pnpm install
-pnpm approve-builds    # 选择 esbuild 并按回车
+# ⚠️ 如果提示 "Ignored build scripts"，执行：
+pnpm approve-builds
+# 按空格选中 esbuild、@parcel/watcher、vue-demi，回车确认
+# 然后重新 pnpm install
 
 # 3. 配置环境变量
 cp .env.example apps/api/.env
-# 编辑 apps/api/.env，替换 JWT_SECRET 为随机值
+# ⚠️ 必须编辑 apps/api/.env，把 JWT_SECRET 改成随机值！
+# 代码会拒绝 your-secret-key-here 和 change-me-in-production 这两个占位符
+# 示例：JWT_SECRET=my-dev-key-abc123
 
 # 4. 启动 PostgreSQL
+# 需先安装并启动 Docker Desktop（鲸鱼图标变绿）
 docker compose up -d
+# 预期：Container flownote-db  Started
 
 # 5. 初始化数据库
-pnpm --filter @flownote/api db:push
+pnpm db:push
+# 预期：[✓] Changes applied（首次）或 [i] No changes detected（后续）
 
-# 6. 启动开发服务
+# 6. 启动 API
 pnpm --filter @flownote/api dev
-# API → http://localhost:3000
-# Web → http://localhost:3001（M3 待开发，届时 pnpm dev 一键启动双端）
+# 预期输出：
+#   🚀 FlowNote API running on http://localhost:3000
+#   📖 API Docs: http://localhost:3000/docs
 ```
+验证：浏览器打开 <http://localhost:3000/health> → 看到 `{"status":"ok"}`
 
 ### 运行测试
 
 ```bash
 pnpm --filter @flownote/api test
+# 预期：9 passed (9)，Tests 167 passed
 ```
 
 ## 项目结构
