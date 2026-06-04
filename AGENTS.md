@@ -117,7 +117,8 @@ flownote/
 
 ```bash
 DATABASE_URL=postgresql://flownote:flownote@localhost:5432/flownote
-JWT_SECRET=change-me-in-production
+# ⚠️ 必须替换为随机密钥，代码拒绝使用占位符
+JWT_SECRET=your-secret-key-here
 PORT=3000
 ```
 
