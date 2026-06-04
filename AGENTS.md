@@ -162,24 +162,38 @@ export default defineConfig({
 ### 4.2 启动步骤
 
 ```bash
-# 1. 安装依赖（首次需批准构建：pnpm approve-builds 选 esbuild）
+# 1. 安装依赖
 pnpm install
+# ⚠️ 首次安装如果提示 "Ignored build scripts"：
+pnpm approve-builds    # 空格选中 esbuild、@parcel/watcher、vue-demi，回车
+pnpm install           # 重新安装
 
 # 2. 配置环境变量
 cp .env.example apps/api/.env
-# 编辑 apps/api/.env，替换 JWT_SECRET
+# ⚠️ 必须编辑 apps/api/.env，把 JWT_SECRET 改成随机值！
+# 代码拒绝占位符 your-secret-key-here 和 change-me-in-production
+# 示例：JWT_SECRET=dev-random-abc123
 
-# 3. 启动 PostgreSQL
+# 3. 启动 PostgreSQL（需 Docker Desktop 运行中）
 docker compose up -d
+# 预期：Container flownote-db Started
 
-# 4. 初始化数据库（生成表结构）
+# 4. 初始化数据库
 pnpm db:push
+# 预期：[✓] Changes applied 或 [i] No changes detected
 
-# 5. 启动开发服务
+# 5. 启动 API（Node 24 原生 --env-file 自动加载 .env）
 pnpm --filter @flownote/api dev
-# API → http://localhost:3000 | Docs → http://localhost:3000/docs
-# Web → http://localhost:3001（M3 待开发）
+# 预期输出：
+#   🚀 FlowNote API running on http://localhost:3000
+#   📖 API Docs: http://localhost:3000/docs
 ```
+验证：`curl http://localhost:3000/health` → `{"status":"ok"}`
+
+> **常见问题：**
+> - `EADDRINUSE` 端口被占 → `taskkill //F //IM node.exe` 后重试
+> - `JWT_SECRET environment variable is required` → .env 没配置好，检查步骤 2
+> - `ECONNREFUSED :5432` → PostgreSQL 没启动，检查 Docker Desktop
 
 单个项目启动：
 ```bash
