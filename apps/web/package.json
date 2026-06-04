@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@flownote/web",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@flownote/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^1.0.0",

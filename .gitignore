@@ -9,6 +9,7 @@ node_modules/
 # === 构建产物 ===
 dist/
 build/
+.nuxt/
 *.tsbuildinfo
 
 # === 日志 ===
