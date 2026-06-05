@@ -265,20 +265,42 @@ describe('Convert', () => {
     pageId = body.target.id;
   });
 
-  it('已转换笔记重复转换 → 409', async () => {
+  it('同一笔记可同时转为知识页和任务 → 201', async () => {
+    // 新建笔记用于测试多次转换
     const server = createServer();
-    const res = await server.request(`/api/v1/notes/${noteId}/convert`, {
+    const createRes = await server.request('/api/v1/notes', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ targetType: 'TASK' }),
+      body: JSON.stringify({ content: 'Multi-convert note' }),
     });
+    const { id: multiNoteId } = await createRes.json();
 
-    expect(res.status).toBe(409);
-    const body = await res.json();
-    expect(body.error).toContain('已转换');
+    // 先转为知识页
+    const res1 = await server.request(`/api/v1/notes/${multiNoteId}/convert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ targetType: 'KNOWLEDGE_PAGE', title: 'Page from multi' }),
+    });
+    expect(res1.status).toBe(201);
+
+    // 再转为任务
+    const res2 = await server.request(`/api/v1/notes/${multiNoteId}/convert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ targetType: 'TASK', title: 'Task from multi' }),
+    });
+    expect(res2.status).toBe(201);
+    const body = await res2.json();
+    expect(body.targetType).toBe('TASK');
   });
 
   it('另一笔记转为任务 → 201', async () => {

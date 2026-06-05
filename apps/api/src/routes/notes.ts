@@ -135,10 +135,9 @@ notesRoute.post('/:id/convert', async (c) => {
   const body = convertNoteSchema.parse(await c.req.json());
   const userId = c.get('userId');
 
-  // FIX 8: 事务包裹检查+insert+update，防止 TOCTOU 竞态和孤儿数据
+  // 事务包裹检查+insert，防止 TOCTOU 竞态
   try {
     const result = await db.transaction(async (tx) => {
-      // SELECT ... FOR UPDATE 行级锁，阻止并发转换
       const [note] = await tx
         .select()
         .from(notes)
@@ -147,9 +146,6 @@ notesRoute.post('/:id/convert', async (c) => {
 
       if (!note) {
         throw new Error('NOT_FOUND');
-      }
-      if (note.isMerged) {
-        throw new Error('ALREADY_MERGED');
       }
 
       if (body.targetType === 'KNOWLEDGE_PAGE') {
@@ -161,11 +157,6 @@ notesRoute.post('/:id/convert', async (c) => {
             userId,
           })
           .returning();
-
-        await tx
-          .update(notes)
-          .set({ isMerged: true, mergedToId: page.id })
-          .where(eq(notes.id, id));
 
         return c.json({ targetType: 'KNOWLEDGE_PAGE', target: page }, 201);
       }
@@ -182,11 +173,6 @@ notesRoute.post('/:id/convert', async (c) => {
         })
         .returning();
 
-      await tx
-        .update(notes)
-        .set({ isMerged: true, mergedToId: task.id })
-        .where(eq(notes.id, id));
-
       return c.json({ targetType: 'TASK', target: task }, 201);
     });
 
@@ -194,9 +180,6 @@ notesRoute.post('/:id/convert', async (c) => {
   } catch (err) {
     if (err instanceof Error && err.message === 'NOT_FOUND') {
       return c.json({ error: '便签不存在' }, 404);
-    }
-    if (err instanceof Error && err.message === 'ALREADY_MERGED') {
-      return c.json({ error: '该便签已转换', status: 'merged' }, 409);
     }
     throw err;
   }

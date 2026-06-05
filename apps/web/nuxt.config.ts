@@ -9,6 +9,11 @@ export default defineNuxtConfig({
   tailwindcss: {
     cssPath: '~/assets/css/main.css',
   },
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://localhost:3000',
+    },
+  },
   alias: {
     '~': './',
     '@': './',
