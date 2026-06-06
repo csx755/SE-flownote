@@ -135,7 +135,7 @@ notesRoute.post('/:id/convert', async (c) => {
   const body = convertNoteSchema.parse(await c.req.json());
   const userId = c.get('userId');
 
-  // 事务包裹检查+insert，防止 TOCTOU 竞态
+  // 事务包裹检查+insert+update，防 TOCTOU 竞态和孤儿数据
   try {
     const result = await db.transaction(async (tx) => {
       const [note] = await tx
@@ -154,9 +154,16 @@ notesRoute.post('/:id/convert', async (c) => {
           .values({
             title: body.title || note.content.slice(0, 20),
             content: note.content,
+            sourceType: 'NOTE',
+            sourceId: note.id,
             userId,
           })
           .returning();
+
+        await tx
+          .update(notes)
+          .set({ isMerged: true, mergedToId: page.id })
+          .where(eq(notes.id, id));
 
         return c.json({ targetType: 'KNOWLEDGE_PAGE', target: page }, 201);
       }
@@ -172,6 +179,11 @@ notesRoute.post('/:id/convert', async (c) => {
           userId,
         })
         .returning();
+
+      await tx
+        .update(notes)
+        .set({ isMerged: true, mergedToId: task.id })
+        .where(eq(notes.id, id));
 
       return c.json({ targetType: 'TASK', target: task }, 201);
     });
