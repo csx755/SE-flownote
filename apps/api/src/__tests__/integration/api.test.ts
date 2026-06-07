@@ -97,6 +97,17 @@ describe('Auth', () => {
     expect(res.status).toBe(401);
   });
 
+  it('错误邮箱 → 401', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'no@exist.com', password: 'Test1234' }),
+    });
+
+    expect(res.status).toBe(401);
+  });
+
   // ── Profile ──────────────────────────────────────────
 
   it('个人信息 → 200 + user 完整字段', async () => {
@@ -332,6 +343,20 @@ describe('Convert', () => {
     const body = await res.json();
     expect(body.targetType).toBe('TASK');
   });
+
+  it('转换不存在的便签 → 404', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/notes/99999/convert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ targetType: 'KNOWLEDGE_PAGE' }),
+    });
+
+    expect(res.status).toBe(404);
+  });
 });
 
 describe('Pages', () => {
@@ -369,6 +394,19 @@ describe('Pages', () => {
   });
 
   // ── Get ──────────────────────────────────────────────
+
+  it('获取知识页列表 → 200 + 数组', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/pages', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThanOrEqual(1);
+    expect(body[0].title).toBeDefined();
+  });
 
   it('获取知识页详情 → 200', async () => {
     const server = createServer();
@@ -409,6 +447,36 @@ describe('Pages', () => {
     // 验证 updatedAt 被后端显式更新
     expect(body.updatedAt).toBeDefined();
     expect(new Date(body.updatedAt).getTime()).toBeGreaterThan(Date.now() - 10_000);
+  });
+
+  it('更新知识页空 body → 400', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/pages/${pageId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeDefined();
+  });
+
+  it('更新不存在的知识页 → 404', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/pages/99999', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ title: 'New Title' }),
+    });
+
+    expect(res.status).toBe(404);
   });
 
   // ── Delete ───────────────────────────────────────────
@@ -577,6 +645,34 @@ describe('Tasks', () => {
     });
 
     expect(res.status).toBe(400);
+  });
+
+  it('更新任务空 body → 400', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('更新不存在的任务 → 404', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks/99999', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ title: 'New Title' }),
+    });
+
+    expect(res.status).toBe(404);
   });
 
   // ── Delete ───────────────────────────────────────────
