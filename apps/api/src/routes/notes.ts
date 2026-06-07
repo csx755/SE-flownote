@@ -154,8 +154,8 @@ notesRoute.post('/:id/convert', async (c) => {
           .values({
             title: body.title || note.content.slice(0, 20),
             content: note.content,
-            sourceType: 'NOTE',
-            sourceId: note.id,
+            // knowledgePages 表无 sourceType/sourceId 列，
+            // 来源追溯通过 notes.mergedToId → knowledgePages.id
             userId,
           })
           .returning();
