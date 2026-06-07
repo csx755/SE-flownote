@@ -26,44 +26,73 @@ FlowNote 是一个将碎片信息捕获、知识结构化、任务执行串联�
 
 - Node.js 22+
 - pnpm 9+
-- Docker & Docker Compose
+- Docker Desktop（需运行中，鲸鱼图标变绿）
 
-### 本地运行
+### 方式一：本地开发（推荐日常开发用）
+
+PostgreSQL 用 Docker，API 和 Web 在本地热重载。
 
 ```bash
-# 1. 克隆仓库
-git clone <repo-url>
-cd flownote
-
-# 2. 安装依赖（首次需批准 esbuild 等包的构建脚本）
+# 1. 安装依赖
 pnpm install
 # ⚠️ 如果提示 "Ignored build scripts"，执行：
-pnpm approve-builds
-# 按空格选中 esbuild、@parcel/watcher、vue-demi，回车确认
-# 然后重新 pnpm install
+pnpm approve-builds  # 按空格选中 esbuild、@parcel/watcher、vue-demi，回车确认
+pnpm install
 
-# 3. 配置环境变量
+# 2. 配置环境变量
 cp .env.example apps/api/.env
 # ⚠️ 必须编辑 apps/api/.env，把 JWT_SECRET 改成随机值！
-# 代码会拒绝 your-secret-key-here 和 change-me-in-production 这两个占位符
+# 代码拒绝 your-secret-key-here 和 change-me-in-production 占位符
 # 示例：JWT_SECRET=my-dev-key-abc123
 
-# 4. 启动 PostgreSQL
-# 需先安装并启动 Docker Desktop（鲸鱼图标变绿）
-docker compose up -d
-# 预期：Container flownote-db  Started
+# 3. 只启动 PostgreSQL（不启动 API 容器）
+docker compose up -d postgres
+# 预期：Container flownote-db  Started (healthy)
 
-# 5. 初始化数据库
+# 4. 初始化数据库
 pnpm db:push
 # 预期：[✓] Changes applied（首次）或 [i] No changes detected（后续）
 
-# 6. 启动 API
-pnpm --filter @flownote/api dev
+# 5. 同时启动 API + Web
+pnpm dev
 # 预期输出：
-#   🚀 FlowNote API running on http://localhost:3000
-#   📖 API Docs: http://localhost:3000/docs
+#   [api]  🚀 FlowNote API running on http://localhost:3000
+#   [api]  📖 API Docs: http://localhost:3000/docs
+#   [web]  Nuxt 3 running on http://localhost:3001
+
+# 或分别启动
+pnpm --filter @flownote/api dev     # API → http://localhost:3000
+pnpm --filter @flownote/web dev     # Web → http://localhost:3001
 ```
-验证：浏览器打开 <http://localhost:3000/health> → 看到 `{"status":"ok"}`
+
+验证：
+- API：`curl http://localhost:3000/health` → `{"status":"ok"}`
+- API 文档：浏览器打开 <http://localhost:3000/docs>
+- 前端：浏览器打开 <http://localhost:3001>
+
+### 方式二：Docker Compose（无需本地 Node）
+
+PostgreSQL + API 全部容器化，只启动前端开发服务。
+
+```bash
+# 1. 配置环境变量（同上）
+cp .env.example apps/api/.env
+vim apps/api/.env   # 修改 JWT_SECRET
+
+# 2. 一键启动 PostgreSQL + API
+docker compose up -d
+# 预期：flownote-db  Healthy, flownote-api  Started
+
+# 3. 初始化数据库
+pnpm db:push
+
+# 4. 启动前端（本地）
+pnpm --filter @flownote/web dev
+```
+
+验证：
+- API：`curl http://localhost:3000/health` → `{"status":"ok"}`
+- 前端：浏览器打开 <http://localhost:3001>
 
 ### 运行测试
 

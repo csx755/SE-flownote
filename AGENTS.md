@@ -161,6 +161,10 @@ export default defineConfig({
 
 ### 4.2 启动步骤
 
+#### 本地开发（推荐）
+
+PostgreSQL 用 Docker，API + Web 本地热重载。
+
 ```bash
 # 1. 安装依赖
 pnpm install
@@ -174,28 +178,48 @@ cp .env.example apps/api/.env
 # 代码拒绝占位符 your-secret-key-here 和 change-me-in-production
 # 示例：JWT_SECRET=dev-random-abc123
 
-# 3. 启动 PostgreSQL（需 Docker Desktop 运行中）
-docker compose up -d
-# 预期：Container flownote-db Started
+# 3. 只启动 PostgreSQL（需 Docker Desktop 运行中）
+docker compose up -d postgres
+# 预期：Container flownote-db  Started (healthy)
 
 # 4. 初始化数据库
 pnpm db:push
 # 预期：[✓] Changes applied 或 [i] No changes detected
 
-# 5. 启动 API（Node 24 原生 --env-file 自动加载 .env）
-pnpm --filter @flownote/api dev
+# 5. 同时启动前后端（Node 22 --import tsx/esm 加载 TypeScript）
+pnpm dev
 # 预期输出：
-#   🚀 FlowNote API running on http://localhost:3000
-#   📖 API Docs: http://localhost:3000/docs
+#   [api]  🚀 FlowNote API running on http://localhost:3000
+#   [api]  📖 API Docs: http://localhost:3000/docs
+#   [web]  Nuxt 3 running on http://localhost:3001
 ```
 验证：`curl http://localhost:3000/health` → `{"status":"ok"}`
 
+#### Docker Compose（无需本地 Node 跑 API）
+
+PostgreSQL + API 容器化，前端本地启动。
+
+```bash
+# 1. 配置 .env（同上）
+cp .env.example apps/api/.env && vim apps/api/.env
+
+# 2. 一键启动 PostgreSQL + API
+docker compose up -d
+# 预期：flownote-db Healthy, flownote-api Started
+
+# 3. 初始化数据库
+pnpm db:push
+
+# 4. 启动前端
+pnpm --filter @flownote/web dev
+```
+
 > **常见问题：**
-> - `EADDRINUSE` 端口被占 → `taskkill //F //IM node.exe` 后重试
+> - `EADDRINUSE` 端口被占 → `docker compose stop api` 或 `taskkill //F //IM node.exe` 后重试
 > - `JWT_SECRET environment variable is required` → .env 没配置好，检查步骤 2
 > - `ECONNREFUSED :5432` → PostgreSQL 没启动，检查 Docker Desktop
 
-单个项目启动：
+单独启动某个服务：
 ```bash
 pnpm --filter @flownote/api dev     # Hono API → localhost:3000
 pnpm --filter @flownote/web dev     # Nuxt 3 → localhost:3001

@@ -10,9 +10,8 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
 
-# hoisted 模式解决 pnpm workspace 在 Node 中的依赖解析
-# 通过 .npmrc 配置，不修改源码文件
-RUN echo "node-linker=hoisted" >> .npmrc && pnpm install --frozen-lockfile
+# shamefully-hoist=true：强制扁平 node_modules，Docker 中 Node 可正常解析
+RUN echo "shamefully-hoist=true" >> .npmrc && pnpm install --frozen-lockfile
 
 # 复制源码
 COPY packages/shared/ packages/shared/
@@ -20,6 +19,7 @@ COPY apps/api/ apps/api/
 
 EXPOSE 3000
 
-# TODO(M4): Docker 容器运行时 CMD 待完善，当前本地 tsx 已全链路通过
-# hoisted 模式 + pnpm exec 在容器中模块解析尚需调试
-CMD ["pnpm", "--filter", "@flownote/api", "exec", "tsx", "src/index.ts"]
+# 在 workspace 中 pnpm 只把 tsx 符号链接到 apps/api/node_modules/tsx
+# 根 /app/node_modules/ 只有 .pnpm/ 没有 tsx → 必须从包目录启动
+WORKDIR /app/apps/api
+CMD ["node", "--import", "tsx/esm", "src/index.ts"]
