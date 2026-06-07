@@ -78,7 +78,7 @@ pagesRoute.patch('/:id', async (c) => {
 
   const [updated] = await db
     .update(knowledgePages)
-    .set(body)
+    .set({ ...body, updatedAt: new Date() })
     .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)))
     .returning();
 

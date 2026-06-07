@@ -229,6 +229,9 @@ describe('Notes', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.content).toBe('# Updated');
+    // 验证 updatedAt 被后端显式更新
+    expect(body.updatedAt).toBeDefined();
+    expect(new Date(body.updatedAt).getTime()).toBeGreaterThan(Date.now() - 10_000);
   });
 
   it('更新不存在的笔记 → 404', async () => {
@@ -403,6 +406,9 @@ describe('Pages', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.title).toBe('Updated Page Title');
+    // 验证 updatedAt 被后端显式更新
+    expect(body.updatedAt).toBeDefined();
+    expect(new Date(body.updatedAt).getTime()).toBeGreaterThan(Date.now() - 10_000);
   });
 
   // ── Delete ───────────────────────────────────────────

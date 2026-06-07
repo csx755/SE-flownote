@@ -98,7 +98,7 @@ notesRoute.patch('/:id', async (c) => {
   // FIX 7: mutation WHERE 包含 userId 纵深防御
   const [updated] = await db
     .update(notes)
-    .set(body)
+    .set({ ...body, updatedAt: new Date() })
     .where(and(eq(notes.id, id), eq(notes.userId, userId)))
     .returning();
 

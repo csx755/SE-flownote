@@ -90,10 +90,12 @@ const savePage = async () => {
   if (!page.value) return
   saving.value = true
   try {
-    await updatePage(page.value.id, {
+    const updated = await updatePage(page.value.id, {
       title: page.value.title,
       content: page.value.content,
     })
+    // 用 API 返回值更新本地状态，确保 updatedAt 等字段刷新
+    page.value = { ...page.value, ...updated }
     saveMessage.value = '保存成功！'
     setTimeout(() => { saveMessage.value = '' }, 2000)
   } catch (e) {

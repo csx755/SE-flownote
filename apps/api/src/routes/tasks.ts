@@ -90,6 +90,7 @@ tasksRoute.patch('/:id', async (c) => {
   const updateData = {
     ...body,
     dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
+    updatedAt: new Date(),
   };
 
   const [updated] = await db

@@ -51,6 +51,42 @@ describe('createTaskSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  // 边界：前端 <input type="date"> 发送 YYYY-MM-DD 格式
+  it('accepts date-only dueDate (YYYY-MM-DD)', () => {
+    const result = createTaskSchema.safeParse({
+      title: 'DateOnly',
+      dueDate: '2026-06-07',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  // 边界：ISO datetime with timezone offset
+  it('accepts ISO datetime with +08:00 offset', () => {
+    const result = createTaskSchema.safeParse({
+      title: 'ISO with offset',
+      dueDate: '2026-06-07T23:59:59+08:00',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  // 边界：毫秒精度
+  it('accepts ISO datetime with milliseconds', () => {
+    const result = createTaskSchema.safeParse({
+      title: 'Milliseconds',
+      dueDate: '2026-06-07T12:00:00.123Z',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  // 边界：空字符串不会被误判为有效日期
+  it('rejects empty string dueDate', () => {
+    const result = createTaskSchema.safeParse({
+      title: 'Empty date',
+      dueDate: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects empty title', () => {
     const result = createTaskSchema.safeParse({ title: '' });
     expect(result.success).toBe(false);
@@ -123,6 +159,22 @@ describe('updateTaskSchema', () => {
       dueDate: '2025-12-31T23:59:59.000Z',
     });
     expect(result.success).toBe(true);
+  });
+
+  // 边界：update 也接受 YYYY-MM-DD 日期格式
+  it('accepts date-only dueDate in update (YYYY-MM-DD)', () => {
+    const result = updateTaskSchema.safeParse({
+      dueDate: '2026-06-07',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  // 边界：update 拒绝无效日期
+  it('rejects invalid dueDate in update', () => {
+    const result = updateTaskSchema.safeParse({
+      dueDate: 'not-a-date',
+    });
+    expect(result.success).toBe(false);
   });
 
   it('accepts empty object (all fields optional)', () => {

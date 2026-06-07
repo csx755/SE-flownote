@@ -140,13 +140,17 @@ const saveTask = async () => {
   if (!task.value) return
   saving.value = true
   try {
-    await updateTask(task.value.id, {
+    const updated = await updateTask(task.value.id, {
       title: task.value.title,
       description: task.value.description,
       status: task.value.status,
       priority: task.value.priority,
-      dueDate: dueDateStr.value || undefined,
+      dueDate: dueDateStr.value
+        ? new Date(dueDateStr.value + 'T00:00:00').toISOString()
+        : undefined,
     })
+    // 用 API 返回值更新本地状态，确保 updatedAt 等字段刷新
+    task.value = { ...task.value, ...updated }
     saveMessage.value = '保存成功！'
     setTimeout(() => { saveMessage.value = '' }, 2000)
   } catch (e) {
