@@ -5,10 +5,14 @@
 
 # === 依赖 ===
 node_modules/
+.pnpm-store/
+.corepack/
 
 # === 构建产物 ===
 dist/
 build/
+.nuxt/
+.output/
 *.tsbuildinfo
 
 # === 日志 ===
