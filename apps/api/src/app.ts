@@ -5,6 +5,8 @@ import auth from './routes/auth';
 import notesRoute from './routes/notes';
 import pagesRoute from './routes/pages';
 import tasksRoute from './routes/tasks';
+import tagsRoute from './routes/tags';
+import searchRoute from './routes/search';
 
 const app = new Hono();
 
@@ -22,6 +24,8 @@ app.route('/api/v1/auth', auth);
 app.route('/api/v1/notes', notesRoute);
 app.route('/api/v1/pages', pagesRoute);
 app.route('/api/v1/tasks', tasksRoute);
+app.route('/api/v1/tags', tagsRoute);
+app.route('/api/v1/search', searchRoute);
 
 // Scalar API 文档
 app.get(

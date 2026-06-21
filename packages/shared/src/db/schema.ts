@@ -105,3 +105,43 @@ export const tasks = pgTable('tasks', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+// ── Tags ──────────────────────────────────────────────
+
+export const tags = pgTable('tags', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 50 }).notNull(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+});
+
+export const noteTags = pgTable('note_tags', {
+  id: serial('id').primaryKey(),
+  noteId: integer('note_id')
+    .notNull()
+    .references(() => notes.id, { onDelete: 'cascade' }),
+  tagId: integer('tag_id')
+    .notNull()
+    .references(() => tags.id, { onDelete: 'cascade' }),
+});
+
+export const pageTags = pgTable('page_tags', {
+  id: serial('id').primaryKey(),
+  pageId: integer('page_id')
+    .notNull()
+    .references(() => knowledgePages.id, { onDelete: 'cascade' }),
+  tagId: integer('tag_id')
+    .notNull()
+    .references(() => tags.id, { onDelete: 'cascade' }),
+});
+
+export const taskTags = pgTable('task_tags', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id')
+    .notNull()
+    .references(() => tasks.id, { onDelete: 'cascade' }),
+  tagId: integer('tag_id')
+    .notNull()
+    .references(() => tags.id, { onDelete: 'cascade' }),
+});

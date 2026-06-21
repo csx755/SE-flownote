@@ -8,6 +8,7 @@ import {
 } from '@flownote/shared';
 import { db } from '../lib/db';
 import { authGuard } from '../middleware/auth';
+import { findBacklinks } from '../lib/backlinks';
 
 const pagesRoute = new Hono();
 
@@ -105,6 +106,16 @@ pagesRoute.delete('/:id', async (c) => {
   }
 
   return c.json({ success: true });
+});
+
+// GET /api/v1/pages/:id/backlinks — 页面反向链接
+pagesRoute.get('/:id/backlinks', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
+  const userId = c.get('userId');
+
+  const backlinks = await findBacklinks(id, userId);
+  return c.json({ backlinks });
 });
 
 export default pagesRoute;

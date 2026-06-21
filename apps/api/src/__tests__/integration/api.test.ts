@@ -805,3 +805,342 @@ describe('CORS & Workspace', () => {
     expect(body.status).toBe('ok');
   });
 });
+
+describe('Tags', () => {
+  let tagId: number;
+  let userBToken = '';
+
+  // 注册第二个用户用于隔离测试
+  it('注册用户 B → 201', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: `isolation_${Date.now()}`,
+        email: `isolation_${Date.now()}@test.com`,
+        password: 'Isolation123',
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    userBToken = body.token;
+  });
+
+  it('创建标签 → 201', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: 'v1.1测试标签' }),
+    });
+
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.id).toBeGreaterThan(0);
+    expect(body.name).toBe('v1.1测试标签');
+    tagId = body.id;
+  });
+
+  it('创建同名标签 → 409', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: 'v1.1测试标签' }),
+    });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('标签列表 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('重命名标签 → 200', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/tags/${tagId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: '重命名标签' }),
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.name).toBe('重命名标签');
+  });
+
+  it('给便签添加标签 → 201', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags/link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entityType: 'note', entityId: noteId, tagId }),
+    });
+
+    expect(res.status).toBe(201);
+  });
+
+  it('重复关联 → 409', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags/link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entityType: 'note', entityId: noteId, tagId }),
+    });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('获取便签的标签 → 200', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/tags/entity/note/${noteId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('移除便签标签 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags/link', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entityType: 'note', entityId: noteId, tagId }),
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('删除标签 → 200', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/tags/${tagId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  // ── 多用户隔离 ────────────────────────────────────────
+
+  it('用户 B 看不到用户 A 的标签', async () => {
+    // 用户 A 创建标签
+    const server = createServer();
+    const createRes = await server.request('/api/v1/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: 'A的标签' }),
+    });
+    expect(createRes.status).toBe(201);
+    const { id: aTagId } = await createRes.json();
+
+    // 用户 B 的标签列表不应包含用户 A 的标签
+    const listRes = await server.request('/api/v1/tags', {
+      headers: { Authorization: `Bearer ${userBToken}` },
+    });
+    const list = await listRes.json();
+    const found = list.find((t: { id: number }) => t.id === aTagId);
+    expect(found).toBeUndefined();
+  });
+
+  it('用户 B 不能操作用户 A 的标签关联', async () => {
+    // 用户 A 创建标签
+    const server = createServer();
+    const tagRes = await server.request('/api/v1/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: '隔离标签' }),
+    });
+    const { id: aTagId } = await tagRes.json();
+
+    // 用户 B 尝试给自己的便签打用户 A 的标签 → 标签对 B 不可见/不存在
+    const linkRes = await server.request('/api/v1/tags/link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userBToken}`,
+      },
+      body: JSON.stringify({ entityType: 'note', entityId: noteId, tagId: aTagId }),
+    });
+    // 标签属于 A，B 无法用它（404 因为标签不存在于 B 的视图）
+    // 或者 404 因为 tags 表按 userId 隔离
+    expect(linkRes.status).toBe(404);
+  });
+
+  // ── 边界 ──────────────────────────────────────────────
+
+  it('删除不存在的标签 → 404', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags/99999', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('重命名不存在的标签 → 404', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tags/99999', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: '不存在' }),
+    });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('给不存在的实体打标签（非法类型） → 400', async () => {
+    const server = createServer();
+    // 先创建标签，再尝试打给非法类型
+    const tagRes = await server.request('/api/v1/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: '边界标签' }),
+    });
+    const { id: boundaryTagId } = await tagRes.json();
+
+    const res = await server.request('/api/v1/tags/link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entityType: 'invalid', entityId: 1, tagId: boundaryTagId }),
+    });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('Search', () => {
+  it('搜索便签 → 有结果', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/search?q=Test', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.results).toBeDefined();
+    expect(Array.isArray(body.results)).toBe(true);
+  });
+
+  it('只搜知识页 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/search?q=Page&type=pages', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    body.results.forEach((r: { type: string }) => {
+      expect(r.type).toBe('page');
+    });
+  });
+
+  it('只搜任务 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/search?q=task&type=tasks', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body.results)).toBe(true);
+  });
+
+  it('空关键词 → 400', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/search?q=', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('非法 type → 400', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/search?q=test&type=invalid', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('Backlinks', () => {
+  it('获取页面反向链接 → 200', async () => {
+    const server = createServer();
+    const res = await server.request(`/api/v1/pages/${pageId}/backlinks`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.backlinks).toBeDefined();
+    expect(Array.isArray(body.backlinks)).toBe(true);
+  });
+
+  it('不存在页面 → 空数组', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/pages/99999/backlinks', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.backlinks).toEqual([]);
+  });
+
+  it('NaN ID → 400', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/pages/abc/backlinks', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(400);
+  });
+});
