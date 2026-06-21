@@ -3,6 +3,7 @@
     <NuxtLink to="/" class="text-xl font-bold text-green-500">FlowNote</NuxtLink>
     <div class="flex items-center gap-4">
       <template v-if="user">
+        <SearchBar />
         <NuxtLink
           to="/notes"
           class="text-sm hover:text-white transition-colors"

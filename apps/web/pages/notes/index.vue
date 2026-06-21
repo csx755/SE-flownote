@@ -94,7 +94,12 @@
                 <div v-else class="flex items-start justify-between">
                   <div class="flex-1 cursor-pointer" @click="startEdit(note)">
                     <p class="whitespace-pre-wrap">{{ note.content }}</p>
-                    <p class="text-xs text-gray-500 mt-2">{{ formatTime(note.updatedAt) }}</p>
+                    <div class="flex items-center gap-2 mt-2">
+                      <p class="text-xs text-gray-500">{{ formatTime(note.updatedAt) }}</p>
+                      <span @click.stop>
+                        <TagPicker entityType="note" :entityId="note.id" />
+                      </span>
+                    </div>
                   </div>
                   <div class="flex items-center gap-2 ml-4">
                     <button

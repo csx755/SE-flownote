@@ -25,6 +25,11 @@
           placeholder="任务标题"
         />
 
+        <!-- 标签 -->
+        <div class="mb-4">
+          <TagPicker entityType="task" :entityId="task.id" />
+        </div>
+
         <!-- 描述编辑 -->
         <div class="mb-6">
           <label class="block text-sm text-gray-400 mb-2">描述</label>

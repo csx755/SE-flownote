@@ -18,7 +18,7 @@
       <div v-if="loading" class="text-center text-gray-400 py-8">加载中...</div>
 
       <!-- 看板三列 -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div v-else-if="tasksByStatus" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- TODO 列 -->
         <div class="bg-card border rounded-lg p-4">
           <div class="flex items-center justify-between mb-4">

@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-background">
     <AppNav />
 
-    <div class="max-w-4xl mx-auto px-6 py-8">
+    <div class="max-w-6xl mx-auto px-6 py-8">
       <!-- 加载状态 -->
       <div v-if="loading" class="text-center text-gray-400 py-8">加载中...</div>
 
@@ -11,19 +11,14 @@
 
       <!-- 编辑器 -->
       <div v-else-if="page">
-        <!-- 标题编辑 -->
-        <input
-          v-model="page.title"
-          class="w-full text-3xl font-bold bg-transparent border-none outline-none mb-6 focus:ring-0"
-          placeholder="页面标题"
-          @blur="saveTitle"
-        />
+        <!-- 标签 -->
+        <div class="mb-4">
+          <TagPicker entityType="page" :entityId="page.id" />
+        </div>
 
-        <!-- 内容编辑 -->
-        <textarea
-          v-model="page.content"
-          class="w-full min-h-[60vh] p-4 bg-card border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm leading-relaxed"
-          placeholder="开始编写知识内容... (支持 Markdown)"
+        <MarkdownEditor
+          v-model:title="editTitle"
+          v-model:content="editContent"
         />
 
         <!-- 底部操作栏 -->
@@ -42,6 +37,22 @@
           </div>
         </div>
 
+        <!-- 反向链接 -->
+        <div v-if="backlinks.length > 0" class="mt-8 pt-6 border-t">
+          <h3 class="text-sm font-medium text-gray-400 mb-3">被引用 ({{ backlinks.length }})</h3>
+          <div class="space-y-2">
+            <NuxtLink
+              v-for="link in backlinks"
+              :key="link.id"
+              :to="`/pages/${link.id}`"
+              class="block p-3 bg-card border rounded-lg hover:border-green-500/50 transition-colors"
+            >
+              <div class="font-medium text-sm">{{ link.title }}</div>
+              <div class="text-xs text-gray-500 mt-1">更新于 {{ formatTime(link.updatedAt) }}</div>
+            </NuxtLink>
+          </div>
+        </div>
+
         <!-- 保存状态提示 -->
         <div v-if="saveMessage" class="fixed bottom-6 right-6 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg">
           {{ saveMessage }}
@@ -55,12 +66,16 @@
 const route = useRoute()
 const { user, fetchProfile } = useAuth()
 const { fetchPage, updatePage } = usePages()
+const api = useApi()
 
 const page = ref(null)
+const editTitle = ref('')
+const editContent = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const error = ref(null)
 const saveMessage = ref('')
+const backlinks = ref([])
 
 // 加载页面
 const loadPage = async () => {
@@ -68,6 +83,10 @@ const loadPage = async () => {
   error.value = null
   try {
     page.value = await fetchPage(Number(route.params.id))
+    editTitle.value = page.value.title
+    editContent.value = page.value.content
+    // 加载反向链接
+    await loadBacklinks()
   } catch (e) {
     error.value = e.data?.error || '加载页面失败'
   } finally {
@@ -75,13 +94,14 @@ const loadPage = async () => {
   }
 }
 
-// 保存标题
-const saveTitle = async () => {
+// 加载反向链接
+const loadBacklinks = async () => {
   if (!page.value) return
   try {
-    await updatePage(page.value.id, { title: page.value.title })
+    const data = await api(`/api/v1/pages/${page.value.id}/backlinks`)
+    backlinks.value = data.backlinks || []
   } catch (e) {
-    console.error('保存标题失败:', e)
+    console.error('加载反向链接失败:', e)
   }
 }
 
@@ -91,11 +111,10 @@ const savePage = async () => {
   saving.value = true
   try {
     const updated = await updatePage(page.value.id, {
-      title: page.value.title,
-      content: page.value.content,
+      title: editTitle.value,
+      content: editContent.value,
     })
-    // 用 API 返回值更新本地状态，确保 updatedAt 等字段刷新
-    page.value = { ...page.value, ...updated }
+    page.value = { ...page.value, ...updated, title: editTitle.value, content: editContent.value }
     saveMessage.value = '保存成功！'
     setTimeout(() => { saveMessage.value = '' }, 2000)
   } catch (e) {
