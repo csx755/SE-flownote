@@ -1,23 +1,43 @@
 import type { Task } from '@flownote/shared'
 
+export interface TaskStats {
+  total: number
+  todo: number
+  inProgress: number
+  done: number
+  overdue: number
+}
+
+export interface TaskFilters {
+  status?: string
+  priority?: string
+  sortBy?: 'createdAt' | 'dueDate' | 'priority'
+  order?: 'asc' | 'desc'
+  page?: number
+  pageSize?: number
+}
+
 export const useTasks = () => {
   const api = useApi()
   const tasks = useState<Task[]>('tasks', () => [])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchTasks = async (params?: { status?: string; page?: number; pageSize?: number }) => {
+  const fetchTasks = async (params?: TaskFilters) => {
     loading.value = true
     error.value = null
     try {
       const query = new URLSearchParams()
       if (params?.status) query.set('status', params.status)
+      if (params?.priority) query.set('priority', params.priority)
+      if (params?.sortBy) query.set('sortBy', params.sortBy)
+      if (params?.order) query.set('order', params.order)
       if (params?.page) query.set('page', String(params.page))
       if (params?.pageSize) query.set('pageSize', String(params.pageSize))
-      
+
       const queryString = query.toString()
       const url = `/api/v1/tasks${queryString ? `?${queryString}` : ''}`
-      
+
       const data = await api(url)
       tasks.value = data
       return data
@@ -26,6 +46,15 @@ export const useTasks = () => {
       throw e
     } finally {
       loading.value = false
+    }
+  }
+
+  const fetchStats = async (): Promise<TaskStats | null> => {
+    try {
+      return await api('/api/v1/tasks/stats')
+    } catch (e: any) {
+      console.error('获取任务统计失败:', e)
+      return null
     }
   }
 
@@ -126,6 +155,7 @@ export const useTasks = () => {
     error,
     tasksByStatus,
     fetchTasks,
+    fetchStats,
     createTask,
     fetchTask,
     updateTask,
