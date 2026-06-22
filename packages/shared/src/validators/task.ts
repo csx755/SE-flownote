@@ -26,6 +26,9 @@ export const updateTaskSchema = z.object({
 
 export const taskQuerySchema = z.object({
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  sortBy: z.enum(['createdAt', 'dueDate', 'priority']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

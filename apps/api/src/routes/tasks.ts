@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, count } from 'drizzle-orm';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -13,7 +13,8 @@ const tasksRoute = new Hono();
 
 tasksRoute.use('*', authGuard);
 
-// GET /api/v1/tasks
+// GET /api/v1/tasks — 支持筛选和排序
+// ?status=&priority=&sortBy=createdAt|dueDate|priority&order=asc|desc
 tasksRoute.get('/', async (c) => {
   const query = taskQuerySchema.parse(c.req.query());
   const userId = c.get('userId');
@@ -24,11 +25,23 @@ tasksRoute.get('/', async (c) => {
     conditions.push(eq(tasks.status, query.status));
   }
 
+  if (query.priority) {
+    conditions.push(eq(tasks.priority, query.priority));
+  }
+
+  const sortCol = {
+    createdAt: tasks.createdAt,
+    dueDate: tasks.dueDate,
+    priority: tasks.priority,
+  }[query.sortBy];
+
+  const orderFn = query.order === 'asc' ? asc : desc;
+
   const list = await db
     .select()
     .from(tasks)
     .where(and(...conditions))
-    .orderBy(desc(tasks.createdAt))
+    .orderBy(orderFn(sortCol))
     .limit(query.pageSize)
     .offset((query.page - 1) * query.pageSize);
 
@@ -55,6 +68,28 @@ tasksRoute.post('/', async (c) => {
 
   return c.json(task, 201);
 });
+
+// ═══ /stats 必须在 /:id 前面，否则 "stats" 会被 :id 匹配 ═══
+
+// GET /api/v1/tasks/stats — 任务统计
+tasksRoute.get('/stats', async (c) => {
+  const userId = c.get('userId');
+
+  const [row] = await db
+    .select({
+      total: count(),
+      todo: sql<number>`COUNT(*) FILTER (WHERE status = 'TODO')`.mapWith(Number),
+      inProgress: sql<number>`COUNT(*) FILTER (WHERE status = 'IN_PROGRESS')`.mapWith(Number),
+      done: sql<number>`COUNT(*) FILTER (WHERE status = 'DONE')`.mapWith(Number),
+      overdue: sql<number>`COUNT(*) FILTER (WHERE status IN ('TODO', 'IN_PROGRESS') AND due_date IS NOT NULL AND due_date < NOW())`.mapWith(Number),
+    })
+    .from(tasks)
+    .where(eq(tasks.userId, userId));
+
+  return c.json(row);
+});
+
+// ═══ /:id 参数化路由放最后 ═══
 
 // GET /api/v1/tasks/:id
 tasksRoute.get('/:id', async (c) => {
@@ -86,7 +121,6 @@ tasksRoute.patch('/:id', async (c) => {
 
   const userId = c.get('userId');
 
-  // FIX 6: PATCH 也需将 dueDate 字符串转为 Date，与 POST 保持一致
   const updateData = {
     ...body,
     dueDate: body.dueDate ? new Date(body.dueDate) : undefined,

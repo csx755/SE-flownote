@@ -237,4 +237,50 @@ describe('taskQuerySchema', () => {
     const result = taskQuerySchema.safeParse({ pageSize: '200' });
     expect(result.success).toBe(false);
   });
+
+  // ── v1.2 筛选排序 ─────────────────────────────────────
+
+  it('defaults sortBy to createdAt and order to desc', () => {
+    const result = taskQuerySchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.sortBy).toBe('createdAt');
+      expect(result.data.order).toBe('desc');
+    }
+  });
+
+  it('accepts sortBy=dueDate', () => {
+    const result = taskQuerySchema.safeParse({ sortBy: 'dueDate' });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts sortBy=priority', () => {
+    const result = taskQuerySchema.safeParse({ sortBy: 'priority' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid sortBy', () => {
+    const result = taskQuerySchema.safeParse({ sortBy: 'title' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts order=asc', () => {
+    const result = taskQuerySchema.safeParse({ order: 'asc' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid order', () => {
+    const result = taskQuerySchema.safeParse({ order: 'random' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts priority filter', () => {
+    const result = taskQuerySchema.safeParse({ priority: 'HIGH' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid priority filter', () => {
+    const result = taskQuerySchema.safeParse({ priority: 'CRITICAL' });
+    expect(result.success).toBe(false);
+  });
 });
