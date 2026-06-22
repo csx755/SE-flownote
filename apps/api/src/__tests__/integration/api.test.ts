@@ -706,6 +706,66 @@ describe('Tasks', () => {
 
     expect(res.status).toBe(404);
   });
+
+  // ── v1.2 筛选排序 ─────────────────────────────────────
+
+  it('按优先级筛选 HIGH → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks?priority=HIGH', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    body.forEach((t: { priority: string }) => {
+      expect(t.priority).toBe('HIGH');
+    });
+  });
+
+  it('按 dueDate 升序排列 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks?sortBy=dueDate&order=asc', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('非法 sortBy → 400', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks?sortBy=invalid', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  // ── v1.2 任务统计 ─────────────────────────────────────
+
+  it('任务统计 → 200', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.total).toBeDefined();
+    expect(body.todo).toBeDefined();
+    expect(body.inProgress).toBeDefined();
+    expect(body.done).toBeDefined();
+    expect(body.overdue).toBeDefined();
+  });
+
+  it('统计数据等于实际任务数', async () => {
+    const server = createServer();
+    const res = await server.request('/api/v1/tasks/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const stats = await res.json();
+    expect(stats.todo + stats.inProgress + stats.done).toBe(stats.total);
+  });
 });
 
 describe('Guards & Edges', () => {
