@@ -16,7 +16,6 @@
       >{{ isExpanded ? '▼' : '▶' }}</span>
       <span v-else class="inline-block w-4 shrink-0"></span>
       <span class="truncate flex-1">📁 {{ node.name }}</span>
-      <span class="text-xs text-gray-500 shrink-0">{{ node.count }}</span>
     </button>
     <!-- 子节点 -->
     <FolderTreeNode

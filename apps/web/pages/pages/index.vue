@@ -23,7 +23,7 @@
               <button @click="activeFolder = ''; loadPages()"
                 :class="!activeFolder ? 'text-green-400 bg-green-600/10' : 'text-gray-400 hover:text-white'"
                 class="w-full text-left px-2 py-1 text-sm rounded">
-                全部 ({{ totalCount }})
+                全部
               </button>
             </li>
             <!-- 树形文件夹 -->
@@ -120,9 +120,6 @@ const fileInput = ref<HTMLInputElement>()
 const activeFolder = ref('')
 const folderTree = ref<FolderNode[]>([])
 
-// 从 pages 获取总数（未筛选时的总数）
-const totalCount = ref(0)
-
 // 所有文件夹路径（平铺，给下拉框用）
 const allFolderPaths = computed(() => {
   const paths: string[] = []
@@ -158,18 +155,6 @@ const loadFolders = async () => {
     folderTree.value = data || []
   } catch (_) {
     folderTree.value = []
-  }
-}
-
-const loadTotalCount = async () => {
-  try {
-    // 获取未筛选的总数
-    const data = await api('/api/v1/pages?pageSize=1')
-    // 没法直接从 API 拿 total，用一个大 pageSize 估算
-    const all = await api('/api/v1/pages?pageSize=1000')
-    totalCount.value = Array.isArray(all) ? all.length : 0
-  } catch (_) {
-    totalCount.value = 0
   }
 }
 
@@ -209,7 +194,7 @@ const importFiles = async (e: Event) => {
   }
   alert(`成功导入 ${count} 个文件`)
   if (fileInput.value) fileInput.value.value = ''
-  await Promise.all([loadPages(), loadFolders(), loadTotalCount()])
+  await Promise.all([loadPages(), loadFolders()])
 }
 
 const createPage = async () => {
@@ -240,7 +225,7 @@ const deletePage = async (id: number) => {
   if (!confirm('确定删除这个页面？')) return
   try {
     await deletePageApi(id)
-    await Promise.all([loadPages(), loadFolders(), loadTotalCount()])
+    await Promise.all([loadPages(), loadFolders()])
   } catch (e: any) {
     alert(e.data?.error || '删除失败')
   }
@@ -262,6 +247,6 @@ onMounted(async () => {
     navigateTo('/login')
     return
   }
-  await Promise.all([loadPages(), loadFolders(), loadTotalCount()])
+  await Promise.all([loadPages(), loadFolders()])
 })
 </script>
