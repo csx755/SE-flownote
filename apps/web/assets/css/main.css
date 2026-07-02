@@ -130,6 +130,23 @@
   font-size: 16px;
 }
 
+.markdown-preview strong {
+  font-weight: 700;
+  color: #0f2b23;
+}
+
+.markdown-preview em {
+  font-style: italic;
+  color: #2a4238;
+}
+
+.markdown-preview mark {
+  background: #f9e79f;
+  color: #17201d;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
 .markdown-preview ul,
 .markdown-preview ol {
   padding-left: 24px;

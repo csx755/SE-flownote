@@ -1,10 +1,11 @@
 import MarkdownIt from 'markdown-it';
+import markdownItMark from 'markdown-it-mark';
 
 export const markdown = new MarkdownIt({
   html: false,
   linkify: true,
   breaks: true,
-});
+}).use(markdownItMark);  // ==高亮== 支持
 
 export const renderMarkdown = (source: string) => markdown.render(source || '');
 
@@ -17,6 +18,7 @@ export const stripMarkdown = (source: string): string => {
     .replace(/\*(.+?)\*/g, '$1')      // 斜体
     .replace(/`(.+?)`/g, '$1')        // 行内代码
     .replace(/~~(.+?)~~/g, '$1')      // 删除线
+    .replace(/==(.+?)==/g, '$1')      // 高亮
     .replace(/\[(.+?)\]\(.+?\)/g, '$1') // 链接
     .replace(/!\[.*?\]\(.+?\)/g, '')  // 图片
     .replace(/^>\s+/gm, '')           // 引用
