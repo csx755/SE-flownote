@@ -40,7 +40,19 @@
 
       <!-- 筛选排序栏 -->
       <div class="flex items-center gap-4 mb-6 p-3 bg-card border rounded-lg">
-        <span class="text-sm text-gray-400">筛选：</span>
+        <span class="text-sm text-gray-400">状态：</span>
+        <select
+          v-model="filters.status"
+          @change="applyFilters"
+          class="px-3 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+        >
+          <option value="">全部状态</option>
+          <option value="TODO">待办</option>
+          <option value="IN_PROGRESS">进行中</option>
+          <option value="DONE">已完成</option>
+        </select>
+
+        <span class="text-sm text-gray-400 ml-4">优先级：</span>
         <select
           v-model="filters.priority"
           @change="applyFilters"
@@ -100,7 +112,7 @@
               @click="navigateTo(`/tasks/${task.id}`)"
             >
               <h3 class="font-medium mb-2">{{ task.title }}</h3>
-              <p v-if="task.description" class="text-sm text-gray-400 line-clamp-2 mb-2">{{ task.description }}</p>
+              <p v-if="task.description" class="text-sm text-gray-400 line-clamp-2 mb-2">{{ stripMarkdown(task.description) }}</p>
               <div class="flex items-center gap-2 mb-2">
                 <span :class="priorityBadgeClass(task.priority)">{{ priorityLabel(task.priority) }}</span>
                 <span v-if="task.dueDate" class="text-xs" :class="isOverdue(task) ? 'text-red-400 font-medium' : 'text-gray-500'">
@@ -139,7 +151,7 @@
               @click="navigateTo(`/tasks/${task.id}`)"
             >
               <h3 class="font-medium mb-2">{{ task.title }}</h3>
-              <p v-if="task.description" class="text-sm text-gray-400 line-clamp-2 mb-2">{{ task.description }}</p>
+              <p v-if="task.description" class="text-sm text-gray-400 line-clamp-2 mb-2">{{ stripMarkdown(task.description) }}</p>
               <div class="flex items-center gap-2 mb-2">
                 <span :class="priorityBadgeClass(task.priority)">{{ priorityLabel(task.priority) }}</span>
                 <span v-if="task.dueDate" class="text-xs" :class="isOverdue(task) ? 'text-red-400 font-medium' : 'text-gray-500'">
@@ -183,7 +195,7 @@
               @click="navigateTo(`/tasks/${task.id}`)"
             >
               <h3 class="font-medium mb-2 line-through text-gray-500">{{ task.title }}</h3>
-              <p v-if="task.description" class="text-sm text-gray-500 line-clamp-2 mb-2">{{ task.description }}</p>
+              <p v-if="task.description" class="text-sm text-gray-500 line-clamp-2 mb-2">{{ stripMarkdown(task.description) }}</p>
               <div class="flex items-center gap-2 mb-2">
                 <span :class="priorityBadgeClass(task.priority)">{{ priorityLabel(task.priority) }}</span>
                 <span v-if="task.dueDate" class="text-xs text-gray-500">{{ formatDate(task.dueDate) }}</span>
@@ -266,7 +278,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { stripMarkdown } from '../../utils/markdown'
 const { user, fetchProfile } = useAuth()
 const { tasks, loading, tasksByStatus, fetchTasks, fetchStats, createTask: createTaskApi, updateTask, deleteTask: deleteTaskApi } = useTasks()
 
@@ -282,16 +295,18 @@ const stats = ref(null)
 
 // 筛选排序状态
 const filters = ref({
+  status: '',
   priority: '',
   sortBy: 'createdAt',
   order: 'desc',
 })
 
-const hasActiveFilters = computed(() => filters.value.priority !== '')
+const hasActiveFilters = computed(() => filters.value.priority !== '' || filters.value.status !== '')
 
 // 加载数据
 const loadData = async () => {
   await fetchTasks({
+    status: filters.value.status || undefined,
     priority: filters.value.priority || undefined,
     sortBy: filters.value.sortBy,
     order: filters.value.order,
@@ -312,6 +327,7 @@ const toggleOrder = () => {
 
 // 清除筛选
 const clearFilters = () => {
+  filters.value.status = ''
   filters.value.priority = ''
   filters.value.sortBy = 'createdAt'
   filters.value.order = 'desc'

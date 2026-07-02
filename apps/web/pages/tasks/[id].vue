@@ -11,10 +11,24 @@
 
       <!-- 任务详情 -->
       <div v-else-if="task">
+        <!-- 返回按钮 -->
+        <div class="mb-4">
+          <button
+            @click="navigateTo('/tasks')"
+            class="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            ← 返回看板
+          </button>
+        </div>
+
         <!-- 状态标签 -->
-        <div class="mb-6">
+        <div class="mb-6 flex items-center gap-3">
           <span :class="statusClass(task.status)" class="px-3 py-1 rounded-full text-sm font-medium">
             {{ statusLabel(task.status) }}
+          </span>
+          <!-- 逾期警告 -->
+          <span v-if="isOverdue(task)" class="px-3 py-1 rounded-full text-sm font-medium bg-red-600/20 text-red-400">
+            ⚠ 已逾期
           </span>
         </div>
 
@@ -53,7 +67,7 @@
           />
           <div
             v-else
-            class="w-full p-4 bg-card border rounded-lg min-h-[200px] markdown-preview"
+            class="w-full p-6 bg-card border rounded-lg min-h-[200px] markdown-preview"
             v-html="renderedDescription"
           />
         </div>
@@ -93,8 +107,17 @@
           </div>
           <div>
             <label class="block text-sm text-gray-400 mb-2">来源</label>
-            <div class="p-3 bg-card border rounded-lg text-sm text-gray-400">
-              {{ task.sourceType ? `${sourceLabel(task.sourceType)} #${task.sourceId}` : '无' }}
+            <div v-if="task.sourceType && task.sourceId" class="p-3 bg-card border rounded-lg text-sm">
+              <a
+                :href="sourceLink"
+                @click.prevent="navigateTo(sourceLink)"
+                class="text-green-400 hover:underline"
+              >
+                {{ sourceLabel(task.sourceType) }} #{{ task.sourceId }}
+              </a>
+            </div>
+            <div v-else class="p-3 bg-card border rounded-lg text-sm text-gray-500">
+              无
             </div>
           </div>
         </div>
@@ -130,8 +153,7 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from 'vue'
+<script setup lang="ts">
 import { renderMarkdown } from '../../utils/markdown'
 
 const route = useRoute()
@@ -147,6 +169,21 @@ const dueDateStr = ref('')
 const showPreview = ref(true)
 
 const renderedDescription = computed(() => renderMarkdown(task.value?.description || ''))
+
+// 是否逾期
+const isOverdue = (t: any) => {
+  if (!t?.dueDate) return false
+  if (t?.status === 'DONE') return false
+  return new Date(t.dueDate) < new Date()
+}
+
+// 来源链接
+const sourceLink = computed(() => {
+  if (!task.value?.sourceType || !task.value?.sourceId) return '#'
+  if (task.value.sourceType === 'KNOWLEDGE_PAGE') return `/pages/${task.value.sourceId}`
+  if (task.value.sourceType === 'NOTE') return `/notes`
+  return '#'
+})
 
 // 加载任务
 const loadTask = async () => {

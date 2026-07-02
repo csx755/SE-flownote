@@ -6,7 +6,7 @@ export const useNotes = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchNotes = async (params?: { archived?: boolean; page?: number; pageSize?: number }) => {
+  const fetchNotes = async (params?: { archived?: boolean; page?: number; pageSize?: number; folder?: string }) => {
     loading.value = true
     error.value = null
     try {
@@ -14,6 +14,7 @@ export const useNotes = () => {
       if (params?.archived !== undefined) query.set('archived', String(params.archived))
       if (params?.page) query.set('page', String(params.page))
       if (params?.pageSize) query.set('pageSize', String(params.pageSize))
+      if (params?.folder) query.set('folder', params.folder)
       
       const queryString = query.toString()
       const url = `/api/v1/notes${queryString ? `?${queryString}` : ''}`

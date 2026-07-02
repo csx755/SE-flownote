@@ -32,6 +32,10 @@ notesRoute.get('/', async (c) => {
     conditions.push(eq(notes.isArchived, query.archived));
   }
 
+  if (query.folder) {
+    conditions.push(eq(notes.folder, query.folder));
+  }
+
   // FIX 5: 实现日期范围过滤（startDate/endDate 之前被解析但丢弃）
   if (query.startDate) {
     conditions.push(gte(notes.createdAt, new Date(query.startDate)));

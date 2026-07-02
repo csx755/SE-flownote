@@ -9,6 +9,7 @@ export const updateNoteSchema = z.object({
   content: z.string().min(1, '内容不能为空').optional(),
   contentType: z.enum(['TEXT', 'MARKDOWN']).optional(),
   isArchived: z.boolean().optional(),
+  folder: z.string().max(255).optional(),
 });
 
 export const noteQuerySchema = z.object({
@@ -20,6 +21,7 @@ export const noteQuerySchema = z.object({
     .optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  folder: z.string().optional(),
 });
 
 export const convertNoteSchema = z.object({

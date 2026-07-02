@@ -61,6 +61,7 @@ export const notes = pgTable('notes', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   mergedToId: integer('merged_to_id'),
+  folder: varchar('folder', { length: 255 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
@@ -75,6 +76,7 @@ export const knowledgePages = pgTable('knowledge_pages', {
   title: varchar('title', { length: 255 }).notNull(),
   content: text('content').notNull().default(''),
   isArchived: boolean('is_archived').notNull().default(false),
+  folder: varchar('folder', { length: 255 }),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -96,6 +98,7 @@ export const tasks = pgTable('tasks', {
   dueDate: timestamp('due_date'),
   sourceType: sourceTypeEnum('source_type'),
   sourceId: integer('source_id'),
+  folder: varchar('folder', { length: 255 }),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

@@ -11,6 +11,16 @@
 
       <!-- 编辑器 -->
       <div v-else-if="page">
+        <!-- 返回按钮 -->
+        <div class="mb-4">
+          <button
+            @click="navigateTo('/pages')"
+            class="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            ← 返回知识页列表
+          </button>
+        </div>
+
         <!-- 标签 -->
         <div class="mb-4">
           <TagPicker entityType="page" :entityId="page.id" />

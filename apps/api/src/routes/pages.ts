@@ -22,10 +22,15 @@ pagesRoute.get('/', async (c) => {
   const query = pageQuerySchema.parse(c.req.query());
   const userId = c.get('userId');
 
+  const conditions = [eq(knowledgePages.userId, userId)];
+  if (query.folder) {
+    conditions.push(eq(knowledgePages.folder, query.folder));
+  }
+
   const list = await db
     .select()
     .from(knowledgePages)
-    .where(eq(knowledgePages.userId, userId))
+    .where(and(...conditions))
     .orderBy(desc(knowledgePages.updatedAt))
     .limit(query.pageSize)
     .offset((query.page - 1) * query.pageSize);
@@ -72,6 +77,7 @@ pagesRoute.post('/', async (c) => {
     .values({
       title: body.title,
       content: body.content,
+      folder: body.folder || null,
       userId,
     })
     .returning();

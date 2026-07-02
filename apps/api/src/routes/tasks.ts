@@ -29,6 +29,10 @@ tasksRoute.get('/', async (c) => {
     conditions.push(eq(tasks.priority, query.priority));
   }
 
+  if (query.folder) {
+    conditions.push(eq(tasks.folder, query.folder));
+  }
+
   const sortCol = {
     createdAt: tasks.createdAt,
     dueDate: tasks.dueDate,
@@ -62,6 +66,7 @@ tasksRoute.post('/', async (c) => {
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
       sourceType: body.sourceType,
       sourceId: body.sourceId,
+      folder: body.folder || null,
       userId,
     })
     .returning();

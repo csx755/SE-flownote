@@ -11,6 +11,7 @@ export interface TaskStats {
 export interface TaskFilters {
   status?: string
   priority?: string
+  folder?: string
   sortBy?: 'createdAt' | 'dueDate' | 'priority'
   order?: 'asc' | 'desc'
   page?: number
@@ -30,6 +31,7 @@ export const useTasks = () => {
       const query = new URLSearchParams()
       if (params?.status) query.set('status', params.status)
       if (params?.priority) query.set('priority', params.priority)
+      if (params?.folder) query.set('folder', params.folder)
       if (params?.sortBy) query.set('sortBy', params.sortBy)
       if (params?.order) query.set('order', params.order)
       if (params?.page) query.set('page', String(params.page))

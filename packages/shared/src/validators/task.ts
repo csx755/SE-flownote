@@ -14,6 +14,7 @@ export const createTaskSchema = z.object({
   dueDate: dueDateSchema.optional(),
   sourceType: z.enum(['NOTE', 'KNOWLEDGE_PAGE']).optional(),
   sourceId: z.number().int().positive().optional(),
+  folder: z.string().max(255).optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -22,6 +23,7 @@ export const updateTaskSchema = z.object({
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: dueDateSchema.optional(),
+  folder: z.string().max(255).optional(),
 });
 
 export const taskQuerySchema = z.object({
@@ -29,6 +31,7 @@ export const taskQuerySchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   sortBy: z.enum(['createdAt', 'dueDate', 'priority']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
+  folder: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

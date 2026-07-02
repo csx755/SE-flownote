@@ -6,14 +6,15 @@ export const usePages = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchPages = async (params?: { page?: number; pageSize?: number }) => {
+  const fetchPages = async (params?: { page?: number; pageSize?: number; folder?: string }) => {
     loading.value = true
     error.value = null
     try {
       const query = new URLSearchParams()
       if (params?.page) query.set('page', String(params.page))
       if (params?.pageSize) query.set('pageSize', String(params.pageSize))
-      
+      if (params?.folder) query.set('folder', params.folder)
+
       const queryString = query.toString()
       const url = `/api/v1/pages${queryString ? `?${queryString}` : ''}`
       
