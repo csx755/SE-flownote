@@ -101,6 +101,49 @@ pnpm --filter @flownote/api test
 # 预期：9 passed (9)，Tests 167 passed
 ```
 
+### API Benchmark
+
+Benchmark 用真实 HTTP 请求压测已启动的 API 服务，模拟“登录 → 捕获笔记 → 转知识页/任务 → 创建任务 → Kanban 状态变更 → 列表/统计/搜索”的实际闭环流程。
+
+```bash
+# 1. 先启动 PostgreSQL 和 API，并确保数据库已初始化
+docker compose up -d postgres
+pnpm db:push
+pnpm --filter @flownote/api dev
+
+# 2. 在另一个终端运行 benchmark
+pnpm benchmark:api
+```
+
+1000 QPS 以上持续压测：
+
+```bash
+pnpm benchmark:api:1000qps
+```
+
+该脚本默认使用 `sustained` 模式：先创建 32 个虚拟用户，并为每个用户预置 20 组笔记/知识页/任务；随后预热 10 秒，再以 1200 QPS 目标速率持续发压 60 秒，达标阈值为 1000 RPS。请求组合按真实应用偏读写比例混合：列表/看板/统计/详情/搜索为主，穿插笔记捕获、任务创建、任务状态变更和笔记转换。脚本会输出总体 RPS、失败数，以及各操作的 avg/p50/p90/p95/p99/max 延迟；若实际 RPS 低于 1000 或出现失败，请求会以非 0 状态结束。
+
+可通过环境变量调整规模：
+
+```bash
+BENCH_USERS=8 BENCH_ITERATIONS=50 pnpm benchmark:api
+BENCH_TARGET_QPS=1500 BENCH_MIN_RPS=1500 BENCH_DURATION_SECONDS=120 pnpm benchmark:api:1000qps
+```
+
+常用参数：
+- `BENCH_BASE_URL`：API 地址，默认 `http://localhost:3000`
+- `BENCH_MODE`：`workflow` 或 `sustained`，默认 `workflow`
+- `BENCH_USERS`：虚拟用户数，普通模式默认 `4`，1000 QPS 脚本默认 `32`
+- `BENCH_ITERATIONS`：普通闭环模式下每个用户执行的业务闭环次数，默认 `25`
+- `BENCH_TARGET_QPS`：持续压测目标 QPS，1000 QPS 脚本默认 `1200`
+- `BENCH_MIN_RPS`：最低达标 RPS，1000 QPS 脚本默认 `1000`
+- `BENCH_DURATION_SECONDS`：持续压测正式统计时长，1000 QPS 脚本默认 `60`
+- `BENCH_SEED_ITEMS`：持续压测中每个用户预置数据量，1000 QPS 脚本默认 `20`
+- `BENCH_MAX_INFLIGHT`：客户端最大在途请求数，默认 `2000`
+- `BENCH_WARMUP_ITERATIONS`：普通模式表示预热闭环次数；持续模式表示预热秒数
+- `BENCH_TIMEOUT_MS`：单请求超时时间，默认 `10000`
+- `BENCH_CLEANUP=true`：运行结束后尽量删除本次创建的笔记、知识页和任务
+
 ## 项目结构
 
 ```

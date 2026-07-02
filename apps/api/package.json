@@ -7,6 +7,8 @@
     "dev": "node --env-file .env --import tsx/esm --watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "benchmark": "tsx src/__benchmarks__/api.benchmark.ts",
+    "benchmark:1000qps": "BENCH_MODE=${BENCH_MODE:-sustained} BENCH_TARGET_QPS=${BENCH_TARGET_QPS:-1200} BENCH_MIN_RPS=${BENCH_MIN_RPS:-1000} BENCH_USERS=${BENCH_USERS:-32} BENCH_SEED_ITEMS=${BENCH_SEED_ITEMS:-20} BENCH_DURATION_SECONDS=${BENCH_DURATION_SECONDS:-60} BENCH_WARMUP_ITERATIONS=${BENCH_WARMUP_ITERATIONS:-10} tsx src/__benchmarks__/api.benchmark.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "drizzle-kit push",
