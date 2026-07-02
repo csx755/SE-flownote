@@ -33,10 +33,28 @@
         <!-- 描述编辑 -->
         <div class="mb-6">
           <label class="block text-sm text-gray-400 mb-2">描述</label>
+          <div class="flex gap-2 mb-2">
+            <button
+              @click="showPreview = false"
+              :class="!showPreview ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300'"
+              class="px-3 py-1 text-xs rounded"
+            >编辑</button>
+            <button
+              @click="showPreview = true"
+              :class="showPreview ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300'"
+              class="px-3 py-1 text-xs rounded"
+            >预览</button>
+          </div>
           <textarea
+            v-if="!showPreview"
             v-model="task.description"
             class="w-full p-4 bg-card border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[200px]"
             placeholder="添加任务描述..."
+          />
+          <div
+            v-else
+            class="w-full p-4 bg-card border rounded-lg min-h-[200px] markdown-preview"
+            v-html="renderedDescription"
           />
         </div>
 
@@ -113,6 +131,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { renderMarkdown } from '../../utils/markdown'
+
 const route = useRoute()
 const { user, fetchProfile } = useAuth()
 const { fetchTask, updateTask, deleteTask: deleteTaskApi } = useTasks()
@@ -123,6 +144,9 @@ const saving = ref(false)
 const error = ref(null)
 const saveMessage = ref('')
 const dueDateStr = ref('')
+const showPreview = ref(true)
+
+const renderedDescription = computed(() => renderMarkdown(task.value?.description || ''))
 
 // 加载任务
 const loadTask = async () => {

@@ -6,12 +6,28 @@
       <!-- 页面标题和创建按钮 -->
       <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold">知识页面</h1>
-        <button
-          @click="showCreateModal = true"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          新建页面
-        </button>
+        <div class="flex gap-2">
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".md,.txt"
+            multiple
+            class="hidden"
+            @change="importFiles"
+          >
+          <button
+            @click="fileInput?.click()"
+            class="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30"
+          >
+            导入
+          </button>
+          <button
+            @click="showCreateModal = true"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            新建页面
+          </button>
+        </div>
       </div>
 
       <!-- 加载状态 -->
@@ -100,6 +116,26 @@ const previewMarkdown = (content: string): string => {
 const showCreateModal = ref(false)
 const newPageTitle = ref('')
 const creating = ref(false)
+const fileInput = ref<HTMLInputElement>()
+
+const importFiles = async (e: Event) => {
+  const files = (e.target as HTMLInputElement).files
+  if (!files) return
+  let count = 0
+  for (const file of files) {
+    try {
+      const content = await file.text()
+      const title = file.name.replace(/\.(md|txt)$/i, '')
+      await createPageApi(title, content)
+      count++
+    } catch (err: any) {
+      alert(`导入 ${file.name} 失败: ${err.data?.error || err.message}`)
+    }
+  }
+  alert(`成功导入 ${count} 个文件`)
+  // 重置 input 以便重复导入同名文件
+  if (fileInput.value) fileInput.value.value = ''
+}
 
 // 创建页面
 const createPage = async () => {

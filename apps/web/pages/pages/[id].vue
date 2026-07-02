@@ -28,6 +28,24 @@
           </div>
           <div class="flex gap-3">
             <button
+              @click="convertToTask"
+              class="px-4 py-2 bg-orange-600/20 text-orange-400 rounded-lg hover:bg-orange-600/30"
+            >
+              转为任务
+            </button>
+            <button
+              @click="exportPage('md')"
+              class="px-3 py-2 bg-gray-600/20 text-gray-400 rounded-lg hover:bg-gray-600/30 text-sm"
+            >
+              导出 .md
+            </button>
+            <button
+              @click="exportPage('txt')"
+              class="px-3 py-2 bg-gray-600/20 text-gray-400 rounded-lg hover:bg-gray-600/30 text-sm"
+            >
+              导出 .txt
+            </button>
+            <button
               @click="savePage"
               :disabled="saving"
               class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
@@ -62,9 +80,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const route = useRoute()
-const { user, fetchProfile } = useAuth()
+const { user, fetchProfile, token } = useAuth()
 const { fetchPage, updatePage } = usePages()
 const api = useApi()
 
@@ -121,6 +139,34 @@ const savePage = async () => {
     alert(e.data?.error || '保存失败')
   } finally {
     saving.value = false
+  }
+}
+
+// 导出
+const exportPage = async (format: 'md' | 'txt') => {
+  if (!page.value || !token.value) return
+  const res = await fetch(`http://localhost:3000/api/v1/pages/export/${page.value.id}?format=${format}`, {
+    headers: { Authorization: `Bearer ${token.value}` },
+  })
+  if (!res.ok) { alert('导出失败'); return }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${page.value.title || 'untitled'}.${format}`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 转为任务
+const convertToTask = async () => {
+  if (!page.value) return
+  if (!confirm('将此知识页面转为任务？转换后可在任务看板中查看。')) return
+  try {
+    await api(`/api/v1/pages/${page.value.id}/convert-to-task`, { method: 'POST' })
+    alert('已转为任务！可在任务看板中查看')
+  } catch (e) {
+    alert(e.data?.error || '转换失败')
   }
 }
 

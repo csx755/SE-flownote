@@ -5,6 +5,9 @@ import {
   updatePageSchema,
   pageQuerySchema,
   knowledgePages,
+  tasks,
+  pageTags,
+  taskTags,
 } from '@flownote/shared';
 import { db } from '../lib/db';
 import { authGuard } from '../middleware/auth';
@@ -28,6 +31,35 @@ pagesRoute.get('/', async (c) => {
     .offset((query.page - 1) * query.pageSize);
 
   return c.json(list);
+});
+
+// ═══ /export 路由必须在 /:id 前面 ═══
+
+// GET /api/v1/pages/export/:id — 导出 .md 或 .txt
+pagesRoute.get('/export/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
+  const format = c.req.query('format') || 'md';
+  if (!['md', 'txt'].includes(format)) return c.json({ error: '格式仅支持 md 或 txt' }, 400);
+  const userId = c.get('userId');
+
+  const [page] = await db
+    .select()
+    .from(knowledgePages)
+    .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)));
+
+  if (!page) return c.json({ error: '知识页面不存在' }, 404);
+
+  const ext = format === 'txt' ? 'txt' : 'md';
+  const mime = format === 'txt' ? 'text/plain' : 'text/markdown';
+  const filename = `${encodeURIComponent(page.title || 'untitled')}.${ext}`;
+
+  return new Response(page.content, {
+    headers: {
+      'Content-Type': `${mime}; charset=utf-8`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
+    },
+  });
 });
 
 // POST /api/v1/pages
@@ -116,6 +148,57 @@ pagesRoute.get('/:id/backlinks', async (c) => {
 
   const backlinks = await findBacklinks(id, userId);
   return c.json({ backlinks });
+});
+
+// POST /api/v1/pages/:id/convert-to-task — 知识页面转任务
+pagesRoute.post('/:id/convert-to-task', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.json({ error: '无效 ID' }, 400);
+  const userId = c.get('userId');
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [page] = await tx
+        .select()
+        .from(knowledgePages)
+        .where(and(eq(knowledgePages.id, id), eq(knowledgePages.userId, userId)))
+        .for('update');
+
+      if (!page) throw new Error('NOT_FOUND');
+
+      const [task] = await tx
+        .insert(tasks)
+        .values({
+          title: page.title,
+          description: page.content,
+          sourceType: 'KNOWLEDGE_PAGE',
+          sourceId: page.id,
+          userId,
+        })
+        .returning();
+
+      // 复制标签
+      const pageTagRows = await tx
+        .select({ tagId: pageTags.tagId })
+        .from(pageTags)
+        .where(eq(pageTags.pageId, id));
+
+      if (pageTagRows.length > 0) {
+        await tx.insert(taskTags).values(
+          pageTagRows.map(pt => ({ taskId: task.id, tagId: pt.tagId })),
+        );
+      }
+
+      return c.json({ targetType: 'TASK', target: task }, 201);
+    });
+
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.message === 'NOT_FOUND') {
+      return c.json({ error: '知识页面不存在' }, 404);
+    }
+    throw err;
+  }
 });
 
 export default pagesRoute;
