@@ -8,6 +8,10 @@ import {
   notes,
   knowledgePages,
   tasks,
+  noteTags,
+  pageTags,
+  taskTags,
+  tags,
 } from '@flownote/shared';
 import { db } from '../lib/db';
 import { authGuard } from '../middleware/auth';
@@ -148,14 +152,18 @@ notesRoute.post('/:id/convert', async (c) => {
         throw new Error('NOT_FOUND');
       }
 
+      // 读取便签的标签（用于复制到目标实体）
+      const noteTagRows = await tx
+        .select({ tagId: noteTags.tagId })
+        .from(noteTags)
+        .where(eq(noteTags.noteId, id));
+
       if (body.targetType === 'KNOWLEDGE_PAGE') {
         const [page] = await tx
           .insert(knowledgePages)
           .values({
             title: body.title || note.content.slice(0, 20),
             content: note.content,
-            // knowledgePages 表无 sourceType/sourceId 列，
-            // 来源追溯通过 notes.mergedToId → knowledgePages.id
             userId,
           })
           .returning();
@@ -164,6 +172,13 @@ notesRoute.post('/:id/convert', async (c) => {
           .update(notes)
           .set({ isMerged: true, mergedToId: page.id })
           .where(eq(notes.id, id));
+
+        // 复制标签到知识页
+        if (noteTagRows.length > 0) {
+          await tx.insert(pageTags).values(
+            noteTagRows.map(nt => ({ pageId: page.id, tagId: nt.tagId }))
+          );
+        }
 
         return c.json({ targetType: 'KNOWLEDGE_PAGE', target: page }, 201);
       }
@@ -184,6 +199,13 @@ notesRoute.post('/:id/convert', async (c) => {
         .update(notes)
         .set({ isMerged: true, mergedToId: task.id })
         .where(eq(notes.id, id));
+
+      // 复制标签到任务
+      if (noteTagRows.length > 0) {
+        await tx.insert(taskTags).values(
+          noteTagRows.map(nt => ({ taskId: task.id, tagId: nt.tagId }))
+        );
+      }
 
       return c.json({ targetType: 'TASK', target: task }, 201);
     });
