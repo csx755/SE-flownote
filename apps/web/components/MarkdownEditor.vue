@@ -101,6 +101,10 @@ const toolbarButtons = [
   { label: '>', title: '引用', action: () => insertLinePrefix('> ', '引用') },
   { label: '```', title: '代码块', action: () => insertMarkdown('```\n$1\n```', '代码块') },
   { label: '🔗', title: '链接', action: () => insertMarkdown('[$1](url)', '链接文本') },
+  { label: '☐', title: '任务列表', action: () => insertLinePrefix('- [ ] ', '任务') },
+  { label: '—', title: '分割线', action: () => insertMarkdown('\n---\n', '') },
+  { label: '⊞', title: '表格', action: () => insertMarkdown(
+    '| 列1 | 列2 | 列3 |\n|-----|-----|-----|\n| 内容 | 内容 | 内容 |', '') },
 ];
 </script>
 

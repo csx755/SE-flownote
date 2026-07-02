@@ -162,7 +162,7 @@ notesRoute.post('/:id/convert', async (c) => {
         const [page] = await tx
           .insert(knowledgePages)
           .values({
-            title: body.title || note.content.slice(0, 20),
+            title: body.title || getFirstLine(note.content),
             content: note.content,
             userId,
           })
@@ -187,7 +187,7 @@ notesRoute.post('/:id/convert', async (c) => {
       const [task] = await tx
         .insert(tasks)
         .values({
-          title: body.title || note.content.slice(0, 30),
+          title: body.title || getFirstLine(note.content),
           description: note.content,
           sourceType: 'NOTE',
           sourceId: note.id,
@@ -218,5 +218,12 @@ notesRoute.post('/:id/convert', async (c) => {
     throw err;
   }
 });
+
+/** 从内容中提取第一行作为标题，去除 Markdown 标题前缀 */
+function getFirstLine(content: string): string {
+  const firstLine = content.split('\n')[0]?.trim() || '';
+  // 去掉 # 前缀和首尾空白，截断到 255 字符
+  return firstLine.replace(/^#{1,6}\s*/, '').slice(0, 255) || '未命名';
+}
 
 export default notesRoute;

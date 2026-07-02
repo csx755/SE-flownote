@@ -31,7 +31,7 @@
           @click="navigateTo(`/pages/${page.id}`)"
         >
           <h3 class="text-lg font-semibold mb-2 line-clamp-1">{{ page.title }}</h3>
-          <p class="text-gray-400 text-sm line-clamp-3 mb-4">{{ page.content || '暂无内容' }}</p>
+          <div class="text-gray-400 text-sm line-clamp-3 mb-4 markdown-preview" v-html="previewMarkdown(page.content)"></div>
           <div class="flex items-center justify-between text-xs text-gray-500">
             <span>{{ formatTime(page.updatedAt) }}</span>
             <div class="flex gap-2">
@@ -84,9 +84,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { renderMarkdown } from '../../utils/markdown';
+
 const { user, fetchProfile } = useAuth()
 const { pages, loading, fetchPages, createPage: createPageApi, deletePage: deletePageApi } = usePages()
+
+const previewMarkdown = (content: string): string => {
+  if (!content) return '<span class="text-gray-500">暂无内容</span>';
+  const html = renderMarkdown(content);
+  const match = html.match(/<(h[1-6]|p)\b[^>]*>.*?<\/\1>/);
+  return match ? match[0] : html.slice(0, 200);
+}
 
 const showCreateModal = ref(false)
 const newPageTitle = ref('')
