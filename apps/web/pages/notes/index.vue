@@ -62,7 +62,8 @@
               <div
                 v-for="note in group.notes"
                 :key="note.id"
-                class="p-4 bg-card border rounded-lg hover:border-green-500/50 transition-colors"
+                :id="`note-${note.id}`"
+                :class="`p-4 bg-card border rounded-lg hover:border-green-500/50 transition-all duration-500 ${highlightClass(note.id)}`"
               >
                 <!-- 编辑模式 -->
                 <div v-if="editingId === note.id">
@@ -152,7 +153,8 @@
           <div
             v-for="note in archivedNotes"
             :key="note.id"
-            class="p-4 bg-card border rounded-lg opacity-75"
+            :id="`note-${note.id}`"
+            :class="`p-4 bg-card border rounded-lg opacity-75 transition-all duration-500 ${highlightClass(note.id)}`"
           >
             <div class="flex items-start justify-between">
               <div class="flex-1">
@@ -183,7 +185,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+const route = useRoute()
 const { user, fetchProfile } = useAuth()
 const { notes, loading, fetchNotes, createNote: createNoteApi, updateNote, deleteNote: deleteNoteApi, convertNote } = useNotes()
 
@@ -197,6 +200,10 @@ const saving = ref(false)
 
 // 归档状态
 const showArchived = ref(false)
+
+// 高亮便签（从任务跳转来）
+const highlightedId = ref<number | null>(null)
+const highlightClass = (noteId: number) => highlightedId.value === noteId ? 'ring-2 ring-green-400 bg-green-600/5' : ''
 
 // 分离未归档和已归档便签
 const activeNotes = computed(() => notes.value.filter(n => !n.isArchived))
@@ -336,6 +343,28 @@ onMounted(async () => {
     navigateTo('/login')
     return
   }
+
+  // 检查是否有需要高亮的便签（从任务跳转来）
+  const hlId = Number(route.query.highlight)
+  if (hlId) {
+    highlightedId.value = hlId
+  }
+
   await fetchNotes()
+
+  // 滚动到高亮的便签
+  if (hlId) {
+    await nextTick()
+    // 可能在已归档中，自动切换显示
+    const note = notes.value.find(n => n.id === hlId)
+    if (note?.isArchived) {
+      showArchived.value = true
+    }
+    await nextTick()
+    const el = document.getElementById(`note-${hlId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
 })
 </script>

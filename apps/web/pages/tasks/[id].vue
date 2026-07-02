@@ -181,7 +181,7 @@ const isOverdue = (t: any) => {
 const sourceLink = computed(() => {
   if (!task.value?.sourceType || !task.value?.sourceId) return '#'
   if (task.value.sourceType === 'KNOWLEDGE_PAGE') return `/pages/${task.value.sourceId}`
-  if (task.value.sourceType === 'NOTE') return `/notes`
+  if (task.value.sourceType === 'NOTE') return `/notes?highlight=${task.value.sourceId}`
   return '#'
 })
 
