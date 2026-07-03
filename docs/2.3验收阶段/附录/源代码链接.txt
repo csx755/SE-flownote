@@ -1,0 +1,15 @@
+FlowNote 源代码仓库
+========================
+
+GitHub 仓库地址：https://github.com/csx755/SE-flownote
+
+主要分支：
+  main（主分支）:  https://github.com/csx755/SE-flownote/tree/main
+  develop（开发分支）:  https://github.com/csx755/SE-flownote/tree/develop
+
+MVP 基线版本：
+  review/jinyichen-v1.2:  https://github.com/csx755/SE-flownote/tree/review/jinyichen-v1.2
+
+MVP 增量修复版本（肖昌珅）：
+  review/jinyichen-v1.2-fixes:  https://github.com/csx755/SE-flownote/tree/review/jinyichen-v1.2-fixes
+  xiaochangshen/v1.2-folder-tree-and-task-fixes:  https://github.com/csx755/SE-flownote/tree/xiaochangshen/v1.2-folder-tree-and-task-fixes
