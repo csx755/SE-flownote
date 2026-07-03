@@ -1,15 +1,22 @@
 FlowNote 源代码仓库
 ========================
 
-GitHub 仓库地址：https://github.com/csx755/SE-flownote
+GitHub 仓库：https://github.com/csx755/SE-flownote
 
-主要分支：
-  main（主分支）:  https://github.com/csx755/SE-flownote/tree/main
-  develop（开发分支）:  https://github.com/csx755/SE-flownote/tree/develop
+关键分支：
 
-MVP 基线版本：
-  review/jinyichen-v1.2:  https://github.com/csx755/SE-flownote/tree/review/jinyichen-v1.2
+1. 主分支（main）
+   链接：https://github.com/csx755/SE-flownote/tree/main
+   说明：项目主分支
 
-MVP 增量修复版本（肖昌珅）：
-  review/jinyichen-v1.2-fixes:  https://github.com/csx755/SE-flownote/tree/review/jinyichen-v1.2-fixes
-  xiaochangshen/v1.2-folder-tree-and-task-fixes:  https://github.com/csx755/SE-flownote/tree/xiaochangshen/v1.2-folder-tree-and-task-fixes
+2. MVP 基线版本（金奕辰 v1.2）
+   链接：https://github.com/csx755/SE-flownote/tree/review/jinyichen-v1.2
+   说明：MVP 课程交付基线，包含用户认证、便签、知识页面、任务看板、标签管理、全局搜索、反向链接功能
+
+3. 最终验收版本（肖昌珅 增量修复）
+   链接：https://github.com/csx755/SE-flownote/tree/xiaochangshen/v1.2-folder-tree-and-task-fixes
+   说明：在 MVP 基线基础上新增文件夹树形管理、任务看板增强、便签高亮定位、导入导出、Bug 修复，含完整验收文档附录
+
+4. 远程部署版本（全坤）
+   链接：https://github.com/csx755/SE-flownote/tree/feat/quank/api-benchmark
+   说明：服务器部署与 API 性能基准测试版本
